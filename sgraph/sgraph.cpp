@@ -31,7 +31,7 @@ int paint(void *unused)
   while(!done)
   {
     SDL_Delay(ticks);
-    if(opts->follow || opts->update) 
+    if( (opts->follow || opts->update) && !zoomSelection ) 
     {
       if(opts->update)
 	d->ResetData();
@@ -57,7 +57,8 @@ int FilterEvents(const SDL_Event *event)
     {
       zoomSelection = 0;
       int code = SDL_BlitSurface(graphics->tmpSurface, &zoomRect, graphics->screen, &zoomRect);
-      graphics->Updated();
+      SDL_UpdateRect(graphics->screen, zoomRect.x, zoomRect.y, zoomRect.w, zoomRect.h);
+
       if(customView==NULL)
 	customView=new View();
 
@@ -84,19 +85,25 @@ int FilterEvents(const SDL_Event *event)
     {
       SDL_GetMouseState(&x, &y);
       // erase previous selection
-      if(abs(x-prevX) > 5 && abs(y- prevY) > 5)
+      if(abs(x-prevX) > 5 && abs(y-prevY) > 5)
       {
 	// revert
 	int code = SDL_BlitSurface(graphics->tmpSurface, &zoomRect, graphics->screen, &zoomRect);
-	
+	SDL_Rect old;
+	old.x=zoomRect.x;
+	old.y=zoomRect.y;
+	old.w=zoomRect.w;
+	old.h=zoomRect.h;
 	double tmp;
 	
 	if((x - origX) < 0)
 	{
 	  zoomRect.w = abs(x-origX);
 	  zoomRect.x = x;
-	} else {
-	  zoomRect.w = x - zoomRect.x;
+	} 
+	else 
+	{
+	  zoomRect.w = x-zoomRect.x;
 	}
 	
 	if( (y-origY) < 0)
@@ -126,8 +133,7 @@ int FilterEvents(const SDL_Event *event)
 		zoomRect.x + zoomRect.w - 3, 
 		zoomRect.y + zoomRect.h - 3, 
 		0,0,255,69);
-	
-
+	SDL_UpdateRect(graphics->screen, old.x, old.y, old.w, old.h);
 	SDL_UpdateRect(graphics->screen, zoomRect.x, zoomRect.y, zoomRect.w, zoomRect.h);
 	
 	prevX=x;
