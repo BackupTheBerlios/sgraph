@@ -21,23 +21,26 @@ public:
 class Graphics 
 {
 public:
+  Graphics() {}
+  virtual ~Graphics() {}
   // line
-  void drawLine(Point *from, Point *to, Color *col);
+  virtual void drawLine(Point *from, Point *to, Color *col) {}
 
   // one pixel point
-  void drawPoint(Point *p, Color *col);
+  virtual void drawPoint(Point *p, Color *col) {}
 
   // filled rectangle
-  void drawRect(Point *ll, Point *ur, Color *col);
+  virtual void drawRect(Point *ll, Point *ur, Color *col) {}
 
   // circle
-  void drawCircle(Point *center, int rad, Color *col);
+  virtual void drawCircle(Point *center, int rad, Color *col) {}
 
   // draw text at position lower left. Font size fixed
-  void drawText(char *str, Point *ll, Color *fg);
+  virtual void drawText(char *str, Point *ll, Color *fg) {}
 
-  // called after update performed
-  void Updated();
+  virtual void Clear() {}
+  // update plot
+  virtual void Updated() {}
   
   View *view;
 };
@@ -47,25 +50,27 @@ class SDLGraphics : public Graphics
 {
 public:
   SDLGraphics();
-  ~SDLGraphics();
+  virtual ~SDLGraphics();
   // override stuff from graphics
 
   // line
-  void drawLine(Point *from, Point *to, Color *col);
+  virtual void drawLine(Point *from, Point *to, Color *col);
 
   // one pixel point
-  void drawPoint(Point *p, Color *col);
+  virtual void drawPoint(Point *p, Color *col);
 
   // filled rectangle
-  void drawRect(Point *ll, Point *ur, Color *col);
+  virtual void drawRect(Point *ll, Point *ur, Color *col);
 
   // circle
-  void drawCircle(Point *center, int rad, Color *col);
+  virtual void drawCircle(Point *center, int rad, Color *col);
 
   // draw text at position lower left. Font size fixed
-  void drawText(char *str, Point *ll, Color *fg);
+  virtual void drawText(char *str, Point *ll, Color *fg);
 
-  void Clear();
+  virtual void Clear();
+  
+  /* internal funcs */ 
 
   // translation
   int PointToPixelX(Point *p);
@@ -76,7 +81,7 @@ public:
   Point *PixelsToPoint(int x, int y);
 
   // called after update performed
-  void Updated();
+  virtual void Updated();
 
   void SetScreenSize(int w, int h);
 
@@ -103,47 +108,35 @@ public:
 class Plotter
 {
 public:
-  int UseGrid;
-  int UseLegend;
+  Plotter(SGraphOptions *o);
 
   void PlotData(Data *d, View *v);
+  void CreateColors(SGraphOptions *o);
+  void DrawGrid(Data *d, View *v);
+  
+  Color *colors;
+  Color *fg;
+  Color *bg;
+  SGraphOptions *opts;
+  Graphics *graphics;
+
+  int UseGrid;
+  int UseLegend;
+  int plotCount;
 };
 
-class SDLPlotter : Plotter
+class SDLPlotter : public Plotter
 {
 public:
   SDLPlotter(SGraphOptions *o);
   ~SDLPlotter();
-  void PlotData(Data *d, View *v);
-  void CreateColors(SGraphOptions *o);
-  void DrawGrid(Data *d, View *v);
-
+  
   SDLGraphics *GetGraphics();
-
-  SDLGraphics *graphics;
-  SGraphOptions *opts;
-  Color *colors;
-
-  Color *fg;
-  Color *bg;
 
   int number_width;
   int number_height;
   int legend_width;
   int title_height;;
-  
-  int plotCount;
-};
-
-
-class HistogramSDLPlotter : public SDLPlotter
-{
-public:
-  HistogramSDLPlotter(SGraphOptions *o) : SDLPlotter(o);
-  void PlotData(Data *d, View *v);
-
-  int *bins;
-  int **counts;
 };
 
 #endif

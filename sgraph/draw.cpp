@@ -121,7 +121,7 @@ void SDLGraphics::Clear()
   boxRGBA(screen, 0, 0, screen_width, screen_height, 0,0,0, 255);
 }
 
-void SDLPlotter::CreateColors(SGraphOptions *o)
+void Plotter::CreateColors(SGraphOptions *o)
 {
   colors = new Color[o->NameCount];
   srandom(0x4242);
@@ -153,7 +153,7 @@ void SDLPlotter::CreateColors(SGraphOptions *o)
 }
 
 // similar grid drawing as in xgraph
-void SDLPlotter::DrawGrid(Data *d, View *view)
+void Plotter::DrawGrid(Data *d, View *view)
 {
   int     expX,expY;
   Point *p1 = new Point();
@@ -187,24 +187,10 @@ void SDLPlotter::DrawGrid(Data *d, View *view)
   }
 }
 
-SDLPlotter::SDLPlotter(SGraphOptions *o)
+Plotter::Plotter(SGraphOptions *o) 
 {
-  opts=o;
-  graphics = new SDLGraphics();
+  opts=o;  
   CreateColors(opts);
-
-  number_width = 70;
-  number_height = 20;
-
-  // todo determine legend width from options (largest string)
-  legend_width = 100;
-  title_height = 20;
-
-  graphics->plot_margin_left=10+number_width;
-  graphics->plot_margin_right=10+legend_width;
-  graphics->plot_margin_top=10+title_height;
-  graphics->plot_margin_bottom=10+number_height;
-
   fg = new Color();
   bg = new Color();
 
@@ -221,10 +207,28 @@ SDLPlotter::SDLPlotter(SGraphOptions *o)
   plotCount=0;
 }
 
+SDLPlotter::SDLPlotter(SGraphOptions *o) : Plotter(o)
+{
+  SDLGraphics *g = new SDLGraphics();
+
+  number_width = 70;
+  number_height = 20;
+
+  // todo determine legend width from options (largest string)
+  legend_width = 100;
+  title_height = 20;
+
+  g->plot_margin_left=10+number_width;
+  g->plot_margin_right=10+legend_width;
+  g->plot_margin_top=10+title_height;
+  g->plot_margin_bottom=10+number_height;
+  
+  graphics=(Graphics *) g;
+}
 
 SDLGraphics *SDLPlotter::GetGraphics()
 {
-  return graphics;
+  return (SDLGraphics *)graphics;
 }
 
 void Plotter::PlotData(Data *d, View *v)
@@ -279,7 +283,3 @@ void Plotter::PlotData(Data *d, View *v)
   plotCount++;
 }
 
-HistogramPlotter::HistogramPlotter(SGraphOptions *o)
-{
-  counts;
-}
