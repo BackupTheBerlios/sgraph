@@ -27,7 +27,8 @@ public:
   int GetNameCount();
 
   int NameCount;
-  
+  int follow; 
+  int update;
   char *FileNames[100];
 };
 

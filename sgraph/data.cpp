@@ -14,6 +14,7 @@ DataFile::DataFile(char *n)
 
   allocated=1000;
   eofReached=0;
+  localCount=0;
 
   points = (Point **)calloc(allocated,sizeof(Point *));
   for(int i=0; i<allocated ; i++)
@@ -22,12 +23,17 @@ DataFile::DataFile(char *n)
   }
   name = n;
   OpenFile();
+
+  charCounter=0;
 }
 
 void DataFile::OpenFile()
 {
   if(!strcmp(name,"-") || !strcmp(name,"stdin"))
+  {
+    fprintf(stdout,"using stdin\n");
     handle=stdin;
+  }
   else
     handle = fopen(name,"r");
 }
@@ -54,7 +60,6 @@ DataFile::~DataFile()
   free(points);
 }
 
-
 int DataFile::MoreData()
 {
   if(eofReached == 0)
@@ -73,17 +78,31 @@ Point *DataFile::ReadRow()
   char *line;
   int readCount=0;
   double x,y;
+  char c;
 
-  line = fgets(l, 2000, handle);
-
-  if(line == NULL)
+  // we have to plot something every now and then
+  while(charCounter<2000)
   {
-    eofReached=1;
-    return NULL;
-  }
-  
-  readCount=sscanf(line,"%lf %lf", &x, &y);
+    c=fgetc(handle);
+    if(c==EOF || c==NULL)
+    {
+      eofReached=1;
+      // wait a while and return, or return for good, your choice...
+      return NULL;
+    }
+    l[charCounter++]=c;
 
+    if(c=='\n' || charCounter==1999)
+    {
+      l[charCounter]='\0';
+      charCounter=0;
+      break;
+    }
+  }
+
+  /* row must end with return */
+  readCount=sscanf(l,"%lf %lf", &x, &y);
+  
   if(readCount==2)
   {
     if(RowCount==(allocated-1))
@@ -96,7 +115,6 @@ Point *DataFile::ReadRow()
 	points[t] = new Point();
       }
     }
-
     points[RowCount]->x = x;
     points[RowCount]->y = y;
     
@@ -122,7 +140,8 @@ Point *DataFile::ReadRow()
   } 
   else 
   {
-    fprintf(stderr,"Ignoring malformed row: %s\n",line);
+    fprintf(stderr,"Ignoring malformed row: %s\n",l);
+    eofReached=1;
     return NULL;
   }
 }
@@ -195,6 +214,14 @@ void Data::ResetData()
   for(int i=0; i<opts->NameCount ; i++)
   {
     dataFiles[i]->Reset();
+  }
+}
+
+void Data::SetEofReached(int e)
+{
+  for(int i=0; i<opts->NameCount ; i++)
+  {
+    dataFiles[i]->eofReached=e;
   }
 }
 

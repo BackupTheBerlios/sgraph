@@ -27,6 +27,8 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
   // set defaults
   int colc=0;
   int debug=0;
+  follow=0;
+  update=0;
 
   while (1) 
   {
@@ -36,22 +38,29 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
     int c;
     
     static struct option long_options[] = {
-      {"train", 0, 0, 0},
+      {"follow", 0, 0, 0},
+      {"update", 0, 0, 0},
       {0, 0, 0, 0}
     };
     
-    c = getopt_long (argc, argv, "t", long_options, &option_index);
+    c = getopt_long (argc, argv, "fu", long_options, &option_index);
     if (c == -1)
       break;
     
     switch (c) 
     {
     case 0:
+      if(option_index == 0)
+	follow=1;
+      if(option_index == 1)
+	update=1;
       break;
-    case 't':
+
+    case 'f':
+      follow=1;
       break;
-    case 'h':
-      usage();
+    case 'u':
+      update=1;
       break;
     default:
       usage();

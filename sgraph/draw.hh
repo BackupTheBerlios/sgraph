@@ -111,7 +111,7 @@ class SDLPlotter : Plotter
 public:
   SDLPlotter(SGraphOptions *o);
   ~SDLPlotter();
-  void PlotData(Data *d);
+  virtual void PlotData(Data *d);
   void CreateColors(SGraphOptions *o);
   SDLGraphics *GetGraphics();
 
@@ -125,6 +125,14 @@ public:
   int plot_margin_bottom;
 
   int plotCount;
+};
+
+
+class StreamSDLPlotter : public SDLPlotter
+{
+public:
+  StreamSDLPlotter(SGraphOptions *o) : SDLPlotter(o) {}
+  void PlotData(Data *d);
 };
 
 #endif

@@ -7,55 +7,72 @@
 int main(int argc, char **argv)
 {
   int start;
+  int ticks=1000;
+  SDLPlotter *plotter; 
 
   SGraphOptions *opts=new SGraphOptions();
   opts->ParseOpts(argc,argv);
   
   Data *d=new Data(opts);
 
-  SDLPlotter *plotter = new SDLPlotter(opts);
+
+  if(opts->follow)
+  {
+    plotter = new StreamSDLPlotter(opts);
+    ticks=100;
+  }
+  else 
+    plotter = new SDLPlotter(opts);
+
   SDLGraphics *graphics = plotter->GetGraphics();
 
   View *customView = new View();
 
   plotter->PlotData(d);
 
+  int pid=fork();
+
   start = SDL_GetTicks();
   while(true)
   {
     SDL_Event event;
     int done = 0;
-
-    int now = SDL_GetTicks();
-    if(now -start > 1000) 
+    int now;
+    if(pid==0)
     {
-      d->ResetData();
-      plotter->PlotData(d);
-      start = SDL_GetTicks();
-    }
-
-
-    while ( SDL_PollEvent(&event) )
-    {
-      int x,y;
-      
-      if ( event.type == SDL_QUIT )  
+      now = SDL_GetTicks();
+      if(now -start > ticks && (opts->follow || opts->update)) 
       {
-	done = 1;  
+	if(opts->update)
+	  d->ResetData();
+	if(opts->follow)
+	  d->SetEofReached(0);
+	plotter->PlotData(d);
+	start = SDL_GetTicks();
       }
-      
-      if ( event.type == SDL_KEYDOWN )
+    } else {
+      while ( SDL_PollEvent(&event) )
       {
-	if ( event.key.keysym.sym == SDLK_ESCAPE ) 
-	{ 
-	  done = 1; 
+	int x,y;
+	
+	if ( event.type == SDL_QUIT )  
+	{
+	  done = 1;  
 	}
 	
-      }
-      if(done == 1) 
-      {
-	SDL_Quit();
-	exit(0);
+	if ( event.type == SDL_KEYDOWN )
+	{
+	  if ( event.key.keysym.sym == SDLK_ESCAPE ) 
+	  { 
+	    done = 1; 
+	  }
+	
+	}
+	if(done == 1) 
+	{
+	  SDL_Quit();
+	  exit(0);
+	}
       }
     }
   }

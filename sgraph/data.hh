@@ -36,6 +36,9 @@ public:
   int RowCount;
   int allocated;
   int eofReached;
+
+  int localCount;
+  int charCounter;
 };
 
 class Data
@@ -59,6 +62,7 @@ public:
   Point **GetPoints(int col);
   int GetRowCount(int col);
 
+  void SetEofReached(int e);
   // default view (contains global limits)
   View *defaultView;
   DataFile **dataFiles;
