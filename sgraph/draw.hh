@@ -38,6 +38,7 @@ public:
   virtual ~Graphics() {}
 
   //! line
+  // virtual void drawLine(Axis *a, Coords *c, Point *from, Point *to, Color *col) {}
   virtual void drawLine(Point *from, Point *to, Color *col) {}
 
   //! one pixel point
@@ -70,7 +71,7 @@ public:
 
   virtual void InitPlot(Data *d) { }
   virtual void PlotData(Data *d, View *v);
-  virtual void CreateColors(SGraphOptions *o);
+  virtual void CreateColors(int datasetcount, int reverse);
   virtual void DrawGrid(Data *d, View *v);
   virtual void DrawLegend(Data *d) {}
   virtual int GetLegendWidth(Data *d) { return 0; }

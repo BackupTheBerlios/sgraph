@@ -15,7 +15,9 @@ DataFile::DataFile(char *n)
   allocated=100000;
   eofReached=0;
   localCount=0;
-  
+
+  // hmm. maybe I should rethink the memory structure of points. double *array is simple and good, Point ** seems overly
+  // convoluted and results in a fragmented memory this way.. maybe a PointArray(double *x, double *y) constructor?
   points = (Point **)calloc(allocated,sizeof(Point *));
   for(int i=0; i<allocated ; i++)
   {
@@ -113,7 +115,7 @@ Point *DataFile::ReadRow()
 
       allocated+=10000;
       points=(Point **)realloc(points,allocated*sizeof(Point *));
-
+      
       for(int t=prevA ; t<allocated ; t++)
       {
 	points[t] = new Point();
@@ -212,13 +214,13 @@ void Data::GetPoint(int col, int i, Point *p)
   Translate(col,p);
 }
 
-
 int Data::GetRowCount(int col)
 {
   // if multicol, return count for correct column
   return(dataFiles[col]->GetRowCount());
 }
 
+//! obsolete
 DataFile **Data::GetDataFiles()
 {
   return dataFiles;
@@ -239,7 +241,6 @@ void Data::SetEofReached(int e)
     dataFiles[i]->eofReached=e;
   }
 }
-
 
 /*
   @return The limits of all datasets
@@ -363,4 +364,3 @@ void Data::Translate(int i, Point *p)
       *p->y = log(100.0*(*p->y) + 1.0)/log(101.0);
   }
 }
-

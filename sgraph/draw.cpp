@@ -1,13 +1,13 @@
 #include "draw.hh"
 
-void Plotter::CreateColors(SGraphOptions *o)
+void Plotter::CreateColors(int datacount, int reverse)
 {
-  colors = new Color[o->NameCount];
+  colors = new Color[datacount];
   srandom(0x4242);
   int brightness=155;
-  if(o->reverse)
+  if(reverse)
     brightness=0;
-  for(int i=0; i<o->NameCount ; i++)
+  for(int i=0; i<datacount ; i++)
   {
 
     int c=(int)floor(genrand()*3);
@@ -39,7 +39,7 @@ void Plotter::CreateColors(SGraphOptions *o)
 Plotter::Plotter(SGraphOptions *o, Data *d) 
 {
   opts=o;  
-  CreateColors(opts);
+  CreateColors(d->GetDataSetCount(),o->reverse);
   fg = new Color();
   bg = new Color();
 

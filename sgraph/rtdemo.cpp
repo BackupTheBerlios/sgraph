@@ -4,10 +4,12 @@
 #include "options.hh"
 #include "data.hh"
 #include "sdldraw.hh"
+#include "demodata.hh"
+#include "randfuncs.hh"
 
 SGraphOptions *opts;
 SDLPlotter *plotter; 
-Data *d;
+DemoData *d;
 SDLController *controller;
 int done = 0;
 
@@ -20,6 +22,29 @@ int control(void *diu)
 int plot(void *notused)
 {
   plotter->PlotData(d);
+  Point **points = d->GetPoints(0);
+  while(!done)
+  {
+    for(int j=0; j<10 ; j++)
+    {
+      double err= 0.01*(randn());      
+      int ind = (int)floor(genrand()*999)+1;
+      for(int i=ind; i<1000 ; i++)
+      {
+	*points[i]->y = *points[i]->y + err;
+      }
+    }
+    for(int j=0; j<100 ; j++)
+    {
+      double err= 0.01*(randn());      
+      int ind = (int)floor(genrand()*999)+1;
+      *points[ind]->y += + err;
+    }
+
+    SDL_Delay(15);
+    plotter->PlotData(d);
+  }
+
   return(0);
 }
 
@@ -49,9 +74,8 @@ int pollforquit(const SDL_Event *event)
 int main(int argc, char **argv)
 { 
   opts=new SGraphOptions();
-  opts->ParseOpts(argc,argv);
   
-  d=new Data(opts);
+  d=new DemoData(opts);
   
   plotter = new SDLPlotter(opts,d);
   

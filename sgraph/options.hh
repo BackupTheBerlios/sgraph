@@ -41,6 +41,9 @@ public:
   int fity;
   int logx;
   int logy;
+  int pixels;
+
+  int rtdemo;
 
   char *FileNames[100];
 };

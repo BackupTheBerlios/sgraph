@@ -20,11 +20,10 @@ void SGraphOptions::usage()
   printf("  -y --fity           0..1 scale all datasets on y-axis.\n");
   printf("  -k --logx           Logarithmic x-axis.\n");
   printf("  -l --logy           Logarithmic y-axis.\n");
+  printf("  -m --markers        Markers (no lines).\n");
+  printf("  -p --pixels          Pixels.\n");
   printf("\n");
-  printf("  Several other xgraph options should work.\n");
-  printf("\n");
-  printf("\n");
-  
+  printf("\n"); 
   exit(0);
 }
 
@@ -39,6 +38,8 @@ SGraphOptions::SGraphOptions()
   follow=0;
   logx=0;
   logy=0;
+  pixels=0;
+  rtdemo=0;
 }
 
 void SGraphOptions::ParseOpts(int argc, char **argv)
@@ -47,9 +48,7 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
   int colc=0;
   int debug=0;
 
-
-
-  while (1) 
+  while (1)
   {
     int this_option_optind = optind ? optind : 1;
     int option_index = 0;
@@ -66,10 +65,12 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
       {"fity", 0, 0, 0},
       {"logx", 0, 0, 0},
       {"logy", 0, 0, 0},
+      {"pixels", 0, 0, 0},
+      {"rtdemo", 0, 0, 0},
       {0, 0, 0, 0}
     };
     
-    c = getopt_long (argc, argv, "fuh2rxylk", long_options, &option_index);
+    c = getopt_long (argc, argv, "fuh2rxylkp", long_options, &option_index);
     if (c == -1)
       break;
     
@@ -94,6 +95,10 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
 	logx=1;
       if(option_index == 8)
 	logy=1;
+      if(option_index == 9)
+	pixels=1;
+      if(option_index == 10)
+	rtdemo=1;
       break;
 
     case 'f':
@@ -123,6 +128,9 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
     case 'k':
       logx=1;
       break;
+    case 'p':
+      pixels=1;
+      break;
 
     default:
       usage();
@@ -144,8 +152,7 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
       optind++;
       NameCount++;
     }
-  }  
-
+  }
 }
 
 int Options::getInt(char *str, char *errorMsg)

@@ -5,8 +5,6 @@
 #define DEFAULT_DEPTH 32
 #define NUM_LEVELS 256
 
-
-
 SDLGraphics::~SDLGraphics()
 {
   exit(0);
@@ -254,7 +252,7 @@ void SDLPlotter::PlotData(Data *d)
 
   continuePlotting=1;
 
-  for(int j=0; j<opts->NameCount ; j++)
+  for(int j=0; j < d->GetDataSetCount() ; j++)
   {
     while(d->MorePoints(j) && continuePlotting)
     {
@@ -273,16 +271,20 @@ void SDLPlotter::PlotData(Data *d)
   DrawGrid(d,graphics->view);
   DrawLegend(d);
   
-  for(int j=0; j<opts->NameCount && continuePlotting ; j++)
+  for(int j=0; j< d->GetDataSetCount() && continuePlotting ; j++)
   {
     d->GetPoint(j,0,lastPoint);
 
     for(int i=1; i< d->GetRowCount(j) && continuePlotting ; i++)
     {
       d->GetPoint(j,i,p);
+      
       if(p!=NULL) 
       {
-	graphics->drawLine(lastPoint,p,&colors[j]); 
+	if(opts->pixels)
+	  graphics->drawPoint(p,&colors[j]); 
+	else
+	  graphics->drawLine(lastPoint,p,&colors[j]); 
 	d->GetPoint(j,i,lastPoint);
       }
       if(i%10000 == 0)
@@ -294,6 +296,8 @@ void SDLPlotter::PlotData(Data *d)
 
   plotCount++;
   PlotFinished(d);
+  free(p);
+  free(lastPoint);
 }
 
 void SDLPlotter::PlotFinished(Data *d)
@@ -447,9 +451,9 @@ void SDLController::FilterEvents()
 	  
 	  plotter->viewChanged=1;
 	  plotter->currentView = customView;
-
+	  
 	  SDL_mutexV(graphics->plotSemaphore);
-
+	  
 	  plotter->PlotData(plotter->data);
 	}
 	
@@ -459,7 +463,7 @@ void SDLController::FilterEvents()
 	  // revert to default view
 	  plotter->currentView=NULL;
 	  SDL_mutexV(graphics->plotSemaphore);
-
+	  
 	  plotter->PlotData(plotter->data);
 	}
       } 
@@ -467,7 +471,6 @@ void SDLController::FilterEvents()
       {
 	if(zoomSelection) 
 	{
-
 	  SDL_GetMouseState(&x, &y);
 	  // erase previous selection
 	  int t=SDL_GetTicks();
@@ -475,7 +478,7 @@ void SDLController::FilterEvents()
 	  {
 	    // revert area
 	    int code = SDL_BlitSurface(graphics->tmpSurface, &zoomRect, graphics->screen, &zoomRect);
-	    
+
 	    SDL_Rect old;
 	    old.x=zoomRect.x;
 	    old.y=zoomRect.y;
@@ -535,12 +538,12 @@ void SDLController::FilterEvents()
       if( event.type == SDL_VIDEORESIZE ) 
       {
 	SDL_mutexP(graphics->plotSemaphore);
+
 	graphics->SetScreenSize(event.resize.w, event.resize.h);
-	
+
 	SDL_mutexV(graphics->plotSemaphore);
 
 	plotter->PlotData(plotter->data);
-
       } 
       
       if( event.type == SDL_MOUSEBUTTONDOWN ) 

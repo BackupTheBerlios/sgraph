@@ -31,8 +31,6 @@ public:
   //! Close file and "lose" all data, calls to ReadRow will start from beginning, 
   void CloseFile();
 
-
-
   //! opens data file. If filename - or stdin, open stdin.
   void OpenFile();
 
@@ -44,7 +42,6 @@ public:
 };
 
 //!  abstract data class, collection N datasets that are to be plotted
-
 /*!
   Currently the implementation is oriented
   to one data-set/file type of data, although this could
@@ -57,44 +54,45 @@ public:
 class Data
 { 
 public:
+  Data() {}
   Data(SGraphOptions *o);
   ~Data();
 
   //! return the bounds of all data read so far
-  View *GetDefaultView();
+  virtual View *GetDefaultView();
 
   //! read one point from dataset n. NULL is returned if point is corrupted some how (happens often with last row of stdin data that isn't ready yet)
-  Point *ReadPoint(int n);
+  virtual Point *ReadPoint(int n);
 
   //! does dataset n potentially contain more points
-  int MorePoints(int n);
+  virtual int MorePoints(int n);
 
   //! reset the data for rereading from start
-  void ResetData();
+  virtual void ResetData();
 
   //! get direct data object for datasets (of points read so far with ReadPoint)
-  Point **GetPoints(int n);
+  virtual Point **GetPoints(int n);
 
   //! get single point with index, translated according to options
-  void GetPoint(int col, int i, Point *p);
+  virtual void GetPoint(int col, int i, Point *p);
 
   //! number of rows read so far in dataset n
-  int GetRowCount(int n);
+  virtual int GetRowCount(int n);
 
   // to enable following files a la tail -f (files that are constantly being written new data) without rereading from beginning
-  void SetEofReached(int e);
+  virtual void SetEofReached(int e);
 
   // Get name of dataset n (could be eg. file name, or a name given with a XGraph type command)
-  char *GetDataName(int n);
+  virtual char *GetDataName(int n);
 
   // Get number of datasets 
-  int GetDataSetCount();
+  virtual int GetDataSetCount();
 
   // translate a point according to opts.
-  void Translate(int i, Point *p);
+  virtual void Translate(int i, Point *p);
 
   //! list of DataFile objects
-  DataFile **GetDataFiles();
+  virtual DataFile **GetDataFiles();
 
   View *defaultView;
   DataFile **dataFiles;
