@@ -29,6 +29,8 @@ public:
   int NameCount;
   int follow; 
   int update;
+  int histogram;
+  int histogram2d;
   char *FileNames[100];
 };
 

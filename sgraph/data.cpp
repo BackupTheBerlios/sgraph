@@ -12,7 +12,7 @@ DataFile::DataFile(char *n)
   logX=0;
   logY=0;
 
-  allocated=1000;
+  allocated=10000;
   eofReached=0;
   localCount=0;
 
@@ -116,8 +116,8 @@ Point *DataFile::ReadRow()
 	points[t] = new Point();
       }
     }
-    points[RowCount]->x = x;
-    points[RowCount]->y = y;
+    *points[RowCount]->x = x;
+    *points[RowCount]->y = y;
     
     if(RowCount == 0)
     {
@@ -229,28 +229,28 @@ void Data::SetEofReached(int e)
 
 View *Data::GetDefaultView()
 {
-  defaultView->ll->x = dataFiles[0]->minX;
-  defaultView->ll->y = dataFiles[0]->minY;
-  defaultView->ur->x = dataFiles[0]->maxX;
-  defaultView->ur->y = dataFiles[0]->maxY;
+  *defaultView->ll->x = dataFiles[0]->minX;
+  *defaultView->ll->y = dataFiles[0]->minY;
+  *defaultView->ur->x = dataFiles[0]->maxX;
+  *defaultView->ur->y = dataFiles[0]->maxY;
 
   for(int i=1; i<opts->NameCount ; i++)
   {
-    if(dataFiles[i]->minX < defaultView->ll->x)
+    if(dataFiles[i]->minX < *defaultView->ll->x)
     {
-      defaultView->ll->x = dataFiles[i]->minX;
+      *defaultView->ll->x = dataFiles[i]->minX;
     }
 
-    if(dataFiles[i]->minY < defaultView->ll->y)
+    if(dataFiles[i]->minY < *defaultView->ll->y)
     {
-      defaultView->ll->y = dataFiles[i]->minY;
+      *defaultView->ll->y = dataFiles[i]->minY;
     }
 
-    if(dataFiles[i]->maxX > defaultView->ur->x)
-      defaultView->ur->x = dataFiles[i]->maxX;
+    if(dataFiles[i]->maxX > *defaultView->ur->x)
+      *defaultView->ur->x = dataFiles[i]->maxX;
 
-    if(dataFiles[i]->maxY > defaultView->ur->y)
-      defaultView->ur->y = dataFiles[i]->maxY;
+    if(dataFiles[i]->maxY > *defaultView->ur->y)
+      *defaultView->ur->y = dataFiles[i]->maxY;
   }
   return defaultView;
 }

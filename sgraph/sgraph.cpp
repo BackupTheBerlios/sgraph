@@ -20,7 +20,7 @@ int paint(void *unused)
   else 
     ticks=1000;
 
-  plotter->PlotData(d);
+  plotter->PlotData(d,NULL);
   while(!done)
   {
     SDL_Delay(ticks);
@@ -30,8 +30,7 @@ int paint(void *unused)
 	d->ResetData();
       if(opts->follow)
 	d->SetEofReached(0);
-      plotter->PlotData(d);
-      start = SDL_GetTicks();
+      plotter->PlotData(d,NULL);
     }
   }
 }
@@ -42,13 +41,11 @@ int main(int argc, char **argv)
   
   d=new Data(opts);
 
+  plotter = new SDLPlotter(opts);
   if(opts->follow)
   {
-    plotter = new StreamSDLPlotter(opts);
     ticks=100;
   }
-  else 
-    plotter = new SDLPlotter(opts);
 
   graphics = plotter->GetGraphics();
 
@@ -89,7 +86,7 @@ int main(int argc, char **argv)
 	if( event.type == SDL_VIDEORESIZE ) 
 	{
 	  graphics->SetScreenSize(event.resize.w, event.resize.h);
-	  plotter->PlotData(d);	  
+	  plotter->PlotData(d,NULL);	  
 	}
 
 	if(done == 1) 

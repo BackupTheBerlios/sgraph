@@ -31,6 +31,9 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
   follow=0;
   update=0;
 
+  histogram=0;
+  histogram2d=0;
+
   while (1) 
   {
     int this_option_optind = optind ? optind : 1;
@@ -41,10 +44,12 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
     static struct option long_options[] = {
       {"follow", 0, 0, 0},
       {"update", 0, 0, 0},
+      {"histogram", 0, 0, 0},
+      {"2d-histogram", 0, 0, 0},
       {0, 0, 0, 0}
     };
     
-    c = getopt_long (argc, argv, "fu", long_options, &option_index);
+    c = getopt_long (argc, argv, "fuh2", long_options, &option_index);
     if (c == -1)
       break;
     
@@ -63,6 +68,13 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
     case 'u':
       update=1;
       break;
+    case 'h':
+      histogram=1;
+      break;
+    case '2':
+      histogram2d=1;
+      break;
+
     default:
       usage();
       break;

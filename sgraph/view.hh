@@ -1,11 +1,24 @@
 #ifndef __VIEW_HH_
 #define __VIEW_HH_
 
-class Point
+#include "defaults.hh"
+
+class Vector
 {
 public:
-  double x;
-  double y;
+  Vector(int d);
+  ~Vector();
+  double *c;
+  int dim;
+};
+
+class Point : public Vector
+{
+public:
+  Point();
+  
+  double *x;
+  double *y;
 };
 
 // lower left and upper right positions
@@ -17,5 +30,6 @@ public:
   Point *ll;
   Point *ur;
 };
+
 
 #endif

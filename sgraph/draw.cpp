@@ -9,7 +9,6 @@
 #define FG_COLOR colors[0]
 #define BG_COLOR colors[nlevels-1];
 
-
 SDLGraphics::~SDLGraphics()
 {
   exit(0);
@@ -18,30 +17,29 @@ SDLGraphics::~SDLGraphics()
 SDLGraphics::SDLGraphics()
 {
   int i;
-
  
   if ( SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO) < 0 )
   {
     printf("Unable to init SDL: %s\n", SDL_GetError());
     exit(1);
-    }
-    atexit(SDL_Quit);
+  }
+  atexit(SDL_Quit);
     
-    screen=SDL_SetVideoMode(DEFAULT_WIDTH,DEFAULT_HEIGHT,DEFAULT_DEPTH,SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_RESIZABLE);
-    if ( screen == NULL )
-    {
-      fprintf(stderr,"Unable to set 640x480 video: %s\n", SDL_GetError());
-      exit(1);
-    }
+  screen=SDL_SetVideoMode(DEFAULT_WIDTH,DEFAULT_HEIGHT,DEFAULT_DEPTH,SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_RESIZABLE);
+  if ( screen == NULL )
+  {
+    fprintf(stderr,"Unable to set 640x480 video: %s\n", SDL_GetError());
+    exit(1);
+  }
 
-    /*    TTF_Init();
-    font=TTF_OpenFont("cmss12.ttf", 12);
-    TTF_SetFontStyle(font, TTF_STYLE_NORMAL);*/
-
-    p = new Point();
-    view = new View();
-    screen_height=DEFAULT_HEIGHT;
-    screen_width=DEFAULT_WIDTH;
+  /*    TTF_Init();
+	font=TTF_OpenFont("cmss12.ttf", 12);
+	TTF_SetFontStyle(font, TTF_STYLE_NORMAL);*/
+  
+  p = new Point();
+  view = new View();
+  screen_height=DEFAULT_HEIGHT;
+  screen_width=DEFAULT_WIDTH;
 }
 
 void SDLGraphics::SetScreenSize(int w, int h)
@@ -79,7 +77,7 @@ void SDLGraphics::drawText(char *str, Point *ll, Color *fg)
 int SDLGraphics::PointToPixelX(Point *p)
 {
   int width = screen_width-plot_margin_left-plot_margin_right;
-  int pixel = plot_margin_left + (int)floor((p->x - view->ll->x)*(width/(view->ur->x - view->ll->x)));
+  int pixel = plot_margin_left + (int)floor((*p->x - *view->ll->x)*(width/(*view->ur->x - *view->ll->x)));
 
   if(pixel>screen_width)
     pixel=screen_width;
@@ -92,7 +90,7 @@ int SDLGraphics::PointToPixelX(Point *p)
 int SDLGraphics::PointToPixelY(Point *p)
 {
   int height = screen_height - plot_margin_top - plot_margin_bottom;
-  int pixel = plot_margin_bottom + (int)floor(height - (p->y - view->ll->y)*(height)/(view->ur->y - view->ll->y));
+  int pixel = plot_margin_bottom + (int)floor(height - (*p->y - *view->ll->y)*(height)/(*view->ur->y - *view->ll->y));
 
   if(pixel>screen_height)
     pixel=screen_height;
@@ -106,8 +104,8 @@ int SDLGraphics::PointToPixelY(Point *p)
 // inverse translation
 Point *SDLGraphics::PixelsToPoint(int x, int y)
 {
-  p->x = (x/screen_width)*(view->ur->x - view->ll->x) + view->ll->x;
-  p->y = view->ur->y - (y/screen_height)*(view->ur->y - view->ll->y);
+  *p->x = (x/screen_width)*(*view->ur->x - *view->ll->x) + *view->ll->x;
+  *p->y = *view->ur->y - (y/screen_height)*(*view->ur->y - *view->ll->y);
   return(p);
 }
 
@@ -161,29 +159,30 @@ void SDLPlotter::DrawGrid(Data *d, View *view)
   Point *p1 = new Point();
   Point *p2 = new Point();
 
-  double minY = view->ll->y;
-  double maxY = view->ur->y;
+  double minY = *view->ll->y;
+  double maxY = *view->ur->y;
 
-  double minX = view->ll->x;
-  double maxX = view->ur->x;
+  double minX = *view->ll->x;
+  double maxX = *view->ur->x;
 
   double xstep =  (maxX-minX)/5.0;
   double ystep =  (maxY-minY)/5.0;
 
   for(double x=minX; x<maxX+1 ; x+= xstep )
   {
-    p1->x=x;
-    p1->y=minY;
-    p2->x=x;
-    p2->y=maxY;
+    *p1->x=x;
+    *p1->y=minY;
+    *p2->x=x;
+    *p2->y=maxY;
     graphics->drawLine(p1,p2,fg);    
   }
   for(double y=minY; y<maxY+1 ; y+= ystep )
   {
-    p1->x=minX;
-    p1->y=y;
-    p2->x=maxX;
-    p2->y=y;
+    *p1->x=minX;
+    *p1->y=y;
+
+    *p2->x=maxX;
+    *p2->y=y;
     graphics->drawLine(p1,p2,fg);
   }
 }
@@ -228,85 +227,59 @@ SDLGraphics *SDLPlotter::GetGraphics()
   return graphics;
 }
 
-void SDLPlotter::PlotData(Data *d)
+void Plotter::PlotData(Data *d, View *v)
 {
   Point **points;
   Point *p = new Point();
   Point *lastPoint = new Point();
-
-  // read all points
-  for(int j=0; j<opts->NameCount ; j++)
-  {
-    while(d->MorePoints(j))
-      d->ReadPoint(j);
-  }
-    
-  graphics->view = d->GetDefaultView();
-  graphics->Clear();
-
-  DrawGrid(d,graphics->view);
+  int c;
+  int slice=100000;
+  int morePoints=1;
   
-  for(int j=0; j<opts->NameCount ; j++)
+  /* plot by slice */
+  while(morePoints > 0)
   {
-    points=d->GetPoints(j);
-    lastPoint = points[0];
-    
-    for(int i=1; i< d->GetRowCount(j) ; i++)
+    c=0;
+    morePoints=0;
+    for(int j=0; j<opts->NameCount ; j++)
     {
-      p=points[i];
-      if(p!=NULL) 
-      {
-	graphics->drawLine(lastPoint,p,&colors[j]);
-	lastPoint = points[i];
-      }
-      if(i%10000 == 0)
-	graphics->Updated();
+      while(d->MorePoints(j) && c < slice)
+	d->ReadPoint(j);
+      morePoints += d->MorePoints(j);
     }
+
+    if(v==NULL)
+      graphics->view = d->GetDefaultView();
+    else
+      graphics->view = v;
+    
+    graphics->Clear();
+    
+    DrawGrid(d,graphics->view);
+
+    for(int j=0; j<opts->NameCount ; j++)
+    {
+      points=d->GetPoints(j);
+      lastPoint = points[0];
+
+      for(int i=1; i< d->GetRowCount(j) ; i++)
+      {
+	p=points[i];
+	if(p!=NULL) 
+	{
+	  graphics->drawLine(lastPoint,p,&colors[j]);
+	  lastPoint = points[i];
+	}
+	if(i%10000 == 0)
+	  graphics->Updated();
+      }
+    }
+    graphics->Updated();
   }
-  graphics->Updated();
   plotCount++;
 }
 
-
-void StreamSDLPlotter::PlotData(Data *d)
+HistogramPlotter::HistogramPlotter(SGraphOptions *o)
 {
-  Point **points;
-  Point *p = new Point();
-  Point *lastPoint = new Point();
-  int count=0;
-
-  // read all points
-  for(int j=0; j<opts->NameCount ; j++)
-  {
-    // on first run, plot everything we can slurp
-    while(d->MorePoints(j))
-    {
-      d->ReadPoint(j);
-      count++;
-    }
-  }
-  
-  graphics->view = d->GetDefaultView();
-  graphics->Clear();
-  DrawGrid(d,graphics->view);
-  
-  for(int j=0; j<opts->NameCount ; j++)
-  {
-    points=d->GetPoints(j);
-    lastPoint = points[0];
-    
-    for(int i=1; i< d->GetRowCount(j) ; i++)
-    {
-      p=points[i];
-      if(p!=NULL) 
-      {
-	graphics->drawLine(lastPoint,p,&colors[j]);
-	lastPoint = points[i];
-      }
-      if(i%10000 == 0 && plotCount==0)
-	graphics->Updated();
-    }
-  }
-  graphics->Updated();
-  plotCount++;
+  counts;
 }

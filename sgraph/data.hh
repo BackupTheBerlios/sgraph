@@ -19,26 +19,11 @@ public:
   void CloseFile();
   void OpenFile();
 
-  int lastModified;
-
   Point **points;
   FILE *handle;
   char *name;
-
-  double minX;
-  double minY;
-  double maxX;
-  double maxY;
-  double scalingFactorX;
-  double scalingFactorY;
-  int logX;
-  int logY;
-  int RowCount;
-  int allocated;
-  int eofReached;
-
-  int localCount;
-  int charCounter;
+  double minX, minY, maxX, maxY, scalingFactorX, scalingFactorY;
+  int logX, logY, RowCount, allocated, eofReached, localCount, charCounter, lastModified;
 };
 
 class Data
@@ -47,23 +32,15 @@ public:
   Data(SGraphOptions *o);
   ~Data();
 
-  // return a very basic view 
   View *GetDefaultView();
-
   DataFile **GetDataFiles();
-
-  // read one point
   Point *ReadPoint(int col);
   int MorePoints(int col);
-
   void ResetData();
-
-  // get all points read so far
   Point **GetPoints(int col);
   int GetRowCount(int col);
-
   void SetEofReached(int e);
-  // default view (contains global limits)
+
   View *defaultView;
   DataFile **dataFiles;
   SGraphOptions *opts;

@@ -106,7 +106,7 @@ public:
   int UseGrid;
   int UseLegend;
 
-  void PlotData(Graphics g, View v, Data d);
+  void PlotData(Data *d, View *v);
 };
 
 class SDLPlotter : Plotter
@@ -114,7 +114,7 @@ class SDLPlotter : Plotter
 public:
   SDLPlotter(SGraphOptions *o);
   ~SDLPlotter();
-  virtual void PlotData(Data *d);
+  void PlotData(Data *d, View *v);
   void CreateColors(SGraphOptions *o);
   void DrawGrid(Data *d, View *v);
 
@@ -136,11 +136,14 @@ public:
 };
 
 
-class StreamSDLPlotter : public SDLPlotter
+class HistogramSDLPlotter : public SDLPlotter
 {
 public:
-  StreamSDLPlotter(SGraphOptions *o) : SDLPlotter(o) {}
-  void PlotData(Data *d);
+  HistogramSDLPlotter(SGraphOptions *o) : SDLPlotter(o);
+  void PlotData(Data *d, View *v);
+
+  int *bins;
+  int **counts;
 };
 
 #endif
