@@ -27,19 +27,12 @@ SDLGraphics::SDLGraphics()
   }
   atexit(SDL_Quit);
     
-  screen=SDL_SetVideoMode(DEFAULT_WIDTH,DEFAULT_HEIGHT,DEFAULT_DEPTH,SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_RESIZABLE);
+  screen=SDL_SetVideoMode(DEFAULT_WIDTH,DEFAULT_HEIGHT,DEFAULT_DEPTH,SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_RESIZABLE);
   if ( screen == NULL )
   {
     fprintf(stderr,"Unable to set 640x480 video: %s\n", SDL_GetError());
     exit(1);
   }
-  tmp = SDL_CreateRGBSurface(SDL_HWSURFACE|SDL_SRCALPHA, DEFAULT_WIDTH, DEFAULT_HEIGHT,
-			     screen->format->BitsPerPixel,
-			     screen->format->Rmask,
-			     screen->format->Gmask,
-			     screen->format->Bmask,
-			     screen->format->Amask);
-
 
   TTF_Init();
   font=TTF_OpenFont("/usr/share/sgraph/cmss12.ttf", 12);
@@ -54,6 +47,18 @@ SDLGraphics::SDLGraphics()
 
   screen_height=DEFAULT_HEIGHT;
   screen_width=DEFAULT_WIDTH;
+
+  tmpSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, DEFAULT_WIDTH, DEFAULT_HEIGHT,
+				    DEFAULT_DEPTH,
+				    screen->format->Rmask,
+				    screen->format->Gmask,
+				    screen->format->Bmask,
+				    screen->format->Amask);
+  if(tmpSurface==NULL)
+    fprintf(stdout,"Creating tmp surface failed\n");
+  
+  SDL_SetAlpha(tmpSurface, 0, 255);
+
 }
 
 Point *SDLGraphics::GetPlotAreaSize()
@@ -71,14 +76,18 @@ void SDLGraphics::SetScreenSize(int w, int h)
   screen_width=w;
   SDL_LockSurface(screen);
   screen=SDL_SetVideoMode(screen_width, screen_height, DEFAULT_DEPTH,SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_RESIZABLE);
-  SDL_FreeSurface(tmp);
-  tmp = SDL_CreateRGBSurface(0, screen_width, screen_height,
-			     screen->format->BitsPerPixel,
-			     screen->format->Rmask,
-			     screen->format->Gmask,
-			     screen->format->Bmask,
-			     screen->format->Amask);
   SDL_UnlockSurface(screen);
+  SDL_FreeSurface(tmpSurface);
+  tmpSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, screen_width, screen_height,
+				    DEFAULT_DEPTH,
+				    screen->format->Rmask,
+				    screen->format->Gmask,
+				    screen->format->Bmask,
+				    screen->format->Amask);
+  if(tmpSurface==NULL)
+    fprintf(stdout,"Creating tmp surface failed\n");
+  SDL_SetAlpha(tmpSurface, 0, 255);
+
 }
 
 void SDLGraphics::drawLine(Point *from, Point *to, Color *col)
@@ -183,8 +192,12 @@ int SDLGraphics::PointToPixelY(Point *p)
 // inverse translation
 Point *SDLGraphics::PixelsToPoint(int x, int y)
 {
-  *p->x = (x/screen_width)*(*view->ur->x - *view->ll->x) + *view->ll->x;
-  *p->y = *view->ur->y - (y/screen_height)*(*view->ur->y - *view->ll->y);
+  int width = screen_width-plot_margin_left-plot_margin_right;
+  int height = screen_height - plot_margin_top - plot_margin_bottom;
+
+  *p->x = (x - plot_margin_left)*(*view->ur->x - *view->ll->x)/((double)width) + *view->ll->x;
+  *p->y = -1.0*((y - plot_margin_bottom)/((double)height) - 1)*(*view->ur->y - *view->ll->y) + *view->ll->y;
+
   return(p);
 }
 
@@ -331,13 +344,16 @@ void Plotter::PlotData(Data *d, View *v)
 	p=points[i];
 	if(p!=NULL) 
 	{
-	  graphics->drawLine(lastPoint,p,&colors[j]);
+	  graphics->drawLine(lastPoint,p,&colors[j]); 
 	  lastPoint = points[i];
 	}
 	if(i%10000 == 0 && dirty)
 	  graphics->Updated();
       }
     }
+    DrawGrid(d,graphics->view);
+    DrawLegend(d);
+
     graphics->Updated();
     if(continuePlotting)
       dirty=0;
@@ -366,8 +382,8 @@ void Plotter::DrawGrid(Data *d, View *view)
 
   double minYe, maxYe, minXe, maxXe;
 
-  expX = (int)floor(log10(MAX(fabs(minX),fabs(maxX)))/4.0);
-  expY = (int)floor(log10(MAX(fabs(minY),fabs(maxY)))/4.0);
+  expX = (int)floor(log10(MAX(fabs(minX),fabs(maxX)))/3.0);
+  expY = (int)floor(log10(MAX(fabs(minY),fabs(maxY)))/3.0);
 
   minYe = minY/(pow(10,expY));
   maxYe = maxY/(pow(10,expY));
@@ -381,7 +397,7 @@ void Plotter::DrawGrid(Data *d, View *view)
   double ystepRound =  floor(ystep*1000.0)/1000.0;
   double xstart= ceil(minXe*1000.0)/1000.0;
   double ystart= ceil(minYe*1000.0)/1000.0;
-  
+
   for(double x=xstart; x < maxXe && xstepRound>0  ; x+= xstepRound )
   {
 
@@ -430,14 +446,14 @@ int SDLPlotter::NMaxXTicks()
   // todo, take into account font size and plot size 
   SDLGraphics *g=GetGraphics();
   Point *area = g->GetPlotAreaSize();
-  return (int)floor((*area->x)/200);
+  return (int)floor((*area->x)/200.0);
 }
 
 int SDLPlotter::NMaxYTicks()
 {
   SDLGraphics *g=GetGraphics();
   Point *area = g->GetPlotAreaSize();
-  return (int)floor((*area->y)/50);
+  return (int)floor((*area->y)/50.0);
 }
 
 SDLGraphics *SDLPlotter::GetGraphics()

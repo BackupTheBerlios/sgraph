@@ -106,9 +106,7 @@ public:
 
   Point *p;
   SDL_Surface *screen;
-
-  // temporary surface used for mouse selection
-  SDL_Surface *tmp;
+  SDL_Surface *tmpSurface;
   Point *plotArea;
 
   TTF_Font *font;
