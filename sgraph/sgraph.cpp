@@ -18,6 +18,7 @@ int origX, origY;
 int prevX, prevY;
 Point *p1;
 Point *p2;
+int mouseTicks;
 
 //! a kludge for quickly doing painting, a GUI Component framework would be better in the future testing the classes
 int paint(void *unused)
@@ -85,7 +86,8 @@ int FilterEvents(const SDL_Event *event)
     {
       SDL_GetMouseState(&x, &y);
       // erase previous selection
-      if(abs(x-prevX) > 5 && abs(y-prevY) > 5)
+      int t=SDL_GetTicks();
+      if((t-mouseTicks) > 50)
       {
 	// revert
 	int code = SDL_BlitSurface(graphics->tmpSurface, &zoomRect, graphics->screen, &zoomRect);
@@ -135,9 +137,9 @@ int FilterEvents(const SDL_Event *event)
 		0,0,255,69);
 	SDL_UpdateRect(graphics->screen, old.x, old.y, old.w, old.h);
 	SDL_UpdateRect(graphics->screen, zoomRect.x, zoomRect.y, zoomRect.w, zoomRect.h);
-	
 	prevX=x;
 	prevY=y;
+	mouseTicks=SDL_GetTicks();
       }
     }
     return(0);
@@ -157,6 +159,7 @@ int FilterEvents(const SDL_Event *event)
       zoomRect.h=1;
       SaveRegion();
       zoomSelection = 1;
+      mouseTicks=SDL_GetTicks();
     }
     return(0);
   }
