@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body id="css-zen-garden">
+
+<div id="container">
+
+<div id="intro">
+
+<div id="pageHeader">
+<h1><span>SGraph</span></h1>
+<h2><span>a very simple data plotter</span></h2>
+</div>
+
+<div id="blah">
+<p>SGraph is a <acronym title="Command Line
+Interface">CLI</acronym>-driven realtime plotter that is intended for quick
+data browsing needs. No waiting, just pipe in the numbers and see.</p>
+
+<p>Download the source <a href="sgraph-1.0.tar.gz">sgraph-1.0.tar.gz</a>. The CVS
+version be a bit ahead, if you are brave enough you can try <a href="http://cvs.berlios.de/cgi-bin/viewcvs.cgi/sgraph/">that</a> as well.</p>
+
+</div>
+
+<div id="blah">
+<h3><span>Screenshots</span></h3>
+<p>
+<ul>
+  <li>Screenshot 1</li>
+  <li>Screenshot 2</li>
+  <li>Screenshot 3</li>
+</ul>
+</p>
+</div>
+
+<div id="blah">
+<h3>Contact</h3>
+<p>
+Juha Vierinen <br/>&lt;jvierine@googles mail.com&gt;
+</p>
+</div>
+
+<!-- intro -->
+</div>
+
+
+<div id="supportingText">
+<div id="blah">
+<h3>Why yet another plotter?</h3>
+<p>Clearly, there are many data visualization tools available and
+everyone probably has their own favorite. Yeah, GNUPlot is nice and
+so is GLE, but one of the few plotters that starts up in a snap and lets
+you browse data without hassle is XGraph. I needed a couple of
+new features for XGraph (hence the name SGraph) to suite my
+visualization needs, but it turned out too difficult to modify. So one
+weekend I hacked up something similar using <a href="http://www.libsdl.org">SDL</a> and C++. I haven't
+used XGraph since, so it was clearly worth the trouble. 
+</p>
+</div> 
+
+<div id="blah"> <h3>Features</h3>
+<p>
+Many of the features are copied from XGraph, there is even visual
+similarity. Still, the focus is slightly more on painless interactive
+plotting and not so much about print quality results. </p>
+
+<p>
+The plotter can also be used for real-time plotting, which means that it can
+periodically update the plot if the datafiles have changed. This is
+useful e.g. for following the state of MCMC integration. Also, it is
+possible to tail a file.
+</p>
+
+<p>
+The code is written with portability and extensibility in mind. The work is of
+course not completely finished, but then again what is ever
+finished. I already use it on a daily basis and it works.
+</p>
+</div>
+
+<div id="blah"> <h3>Screenshots</h3>
+<a href="shot1.png"><img src="shot1_tn.png"/></a>
+</div>
+
+
+<div id="blah"> <h3>Dependencies</h3>
+<p>
+<ul>
+  <li><a href="http://www.libsdl.org">libSDL</a></li>
+  <li><a href="http://www.libsdl.org/projects/SDL_ttf/">SDL_ttf</a></li>
+  <li><a href="http://www.ferzkopp.net/~aschiffler/Software/SDL_gfx-2.0/">SDL_gfx</a></li>
+</ul>
+</p>
+</div>
+
+
+<div id="blah"> <h3>Todo</h3>
+<ul>
+  <li>Postscript output</li>
+  <li>Histogram</li>
+  <li>Support for huge data files</li>
+  <li>Binary formats</li>
+</ul>
+</div>
+
+
+
+</body> 
+</html>
