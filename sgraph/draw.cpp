@@ -48,6 +48,7 @@ Point *SDLGraphics::GetPlotAreaSize()
 {
   *plotArea->x = screen_width - plot_margin_right - plot_margin_left;
   *plotArea->y = screen_height - plot_margin_top - plot_margin_bottom;
+
   return plotArea;
 }
 
@@ -56,27 +57,37 @@ void SDLGraphics::SetScreenSize(int w, int h)
 {
   screen_height=h;
   screen_width=w;
+  SDL_LockSurface(screen);
   screen=SDL_SetVideoMode(screen_width, screen_height, DEFAULT_DEPTH,SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_RESIZABLE);
+  SDL_UnlockSurface(screen);
 }
 
 void SDLGraphics::drawLine(Point *from, Point *to, Color *col)
 {
+  SDL_LockSurface(screen);
   aalineRGBA(screen, PointToPixelX(from), PointToPixelY(from), PointToPixelX(to), PointToPixelY(to), col->r, col->g, col->b, col->a);
+  SDL_UnlockSurface(screen);
 }
 
 void SDLGraphics::drawPoint(Point *p, Color *col)
 {
+  SDL_LockSurface(screen);
   pixelRGBA(screen, PointToPixelX(p), PointToPixelY(p), col->r, col->g, col->b, col->a);
+  SDL_UnlockSurface(screen);
 }
 
 void SDLGraphics::drawRect(Point *ll, Point *ur, Color *col)
 {
+  SDL_LockSurface(screen);
   rectangleRGBA(screen, PointToPixelX(ll), PointToPixelY(ll), PointToPixelX(ur), PointToPixelY(ur), col->r, col->g, col->b, col->a);
+  SDL_UnlockSurface(screen);
 }
 
 void SDLGraphics::drawCircle(Point *center, int rad, Color *col)
 {
+  SDL_LockSurface(screen);
   circleRGBA(screen, PointToPixelX(center), PointToPixelY(center), rad, col->r, col->g, col->b, col->a);
+  SDL_UnlockSurface(screen);
 }
 
 void SDLGraphics::drawText(char *str, Point *ll, Color *fg, int alignx, int aligny)
@@ -128,8 +139,8 @@ int SDLGraphics::PointToPixelX(Point *p)
   int width = screen_width-plot_margin_left-plot_margin_right;
   int pixel = plot_margin_left + (int)floor((*p->x - *view->ll->x)*(width/(*view->ur->x - *view->ll->x)));
 
-  if(pixel>screen_width)
-    pixel=screen_width;
+  if(pixel>(screen_width-1))
+    pixel=screen_width-1;
 
   if(pixel<0)
     pixel=0;
@@ -141,8 +152,8 @@ int SDLGraphics::PointToPixelY(Point *p)
   int height = screen_height - plot_margin_top - plot_margin_bottom;
   int pixel = plot_margin_bottom + (int)floor(height - (*p->y - *view->ll->y)*(height)/(*view->ur->y - *view->ll->y));
 
-  if(pixel>screen_height)
-    pixel=screen_height;
+  if(pixel>(screen_height-1))
+    pixel=screen_height-1;
 
   if(pixel<0)
     pixel=0;
@@ -161,13 +172,17 @@ Point *SDLGraphics::PixelsToPoint(int x, int y)
 // called after update performed
 void SDLGraphics::Updated()
 {
+  SDL_LockSurface(screen);
   SDL_Flip(screen);
+  SDL_UnlockSurface(screen);
 }
 
 
 void SDLGraphics::Clear()
 {
+  SDL_LockSurface(screen);
   boxRGBA(screen, 0, 0, screen_width, screen_height, 0,0,0, 255);
+  SDL_UnlockSurface(screen);
 }
 
 void Plotter::CreateColors(SGraphOptions *o)
@@ -230,15 +245,18 @@ void Plotter::PlotData(Data *d, View *v)
   int c;
   int slice=100000;
   int morePoints=1;
+
+  InitPlot(d);  
+  continuePlotting=1;
   
   /* plot by slice */
-  while(morePoints > 0)
+  while(morePoints > 0 && continuePlotting)
   {
     c=0;
     morePoints=0;
     for(int j=0; j<opts->NameCount ; j++)
     {
-      while(d->MorePoints(j) && c < slice)
+      while(d->MorePoints(j) && c < slice && continuePlotting)
 	d->ReadPoint(j);
       morePoints += d->MorePoints(j);
     }
@@ -250,16 +268,16 @@ void Plotter::PlotData(Data *d, View *v)
     
     graphics->Clear();
     
-    InitPlot(d);
+
     DrawGrid(d,graphics->view);
     DrawLegend(d);
 
-    for(int j=0; j<opts->NameCount ; j++)
+    for(int j=0; j<opts->NameCount && continuePlotting ; j++)
     {
       points=d->GetPoints(j);
       lastPoint = points[0];
 
-      for(int i=1; i< d->GetRowCount(j) ; i++)
+      for(int i=1; i< d->GetRowCount(j) && continuePlotting ; i++)
       {
 	p=points[i];
 	if(p!=NULL) 
@@ -274,6 +292,7 @@ void Plotter::PlotData(Data *d, View *v)
     graphics->Updated();
   }
   plotCount++;
+  PlotFinished(d);
 }
 
 
@@ -318,8 +337,9 @@ void Plotter::DrawGrid(Data *d, View *view)
   double xstart= ceil(minXe*1000.0)/1000.0;
   double ystart= ceil(minYe*1000.0)/1000.0;
   
-  for(double x=xstart; x < maxXe ; x+= xstepRound )
+  for(double x=xstart; x < maxXe && xstepRound>0  ; x+= xstepRound )
   {
+
     *p1->x=x*pow(10,expX);
     *p1->y=minY;
     *p2->x=x*pow(10,expX);
@@ -330,9 +350,9 @@ void Plotter::DrawGrid(Data *d, View *view)
 
     graphics->drawText(text, p1, fg, ALIGN_CENTER, ALIGN_TOP);
 
-    fprintf(stdout,"X axis %g %g %d\n",x,x*pow(10,expX),expX);
+    //fprintf(stdout,"X axis %g %g %d\n",x,x*pow(10,expX),expX);
   }
-  for(double y=ystart; y< maxYe ; y+= ystepRound )
+  for(double y=ystart; y < maxYe && ystepRound > 0 ; y+= ystepRound )
   {
     *p1->x=minX;
     *p1->y=y*pow(10,expY);
@@ -344,7 +364,7 @@ void Plotter::DrawGrid(Data *d, View *view)
     sprintf(text,"%3g",y);
     graphics->drawText(text, p1, fg, ALIGN_RIGHT, ALIGN_CENTER);
 
-    fprintf(stdout,"Y axis %g %g %d\n",y,y*pow(10,expY),expY);
+    // fprintf(stdout,"Y axis %g %g %d\n",y,y*pow(10,expY),expY);
   }
 }
 
@@ -357,6 +377,8 @@ SDLPlotter::SDLPlotter(SGraphOptions *o, Data *d) : Plotter(o,d)
 
   number_width = 70;
   number_height = 20;
+
+  plotSemaphore = SDL_CreateMutex();
 }
 
 int SDLPlotter::NMaxXTicks()
@@ -398,8 +420,9 @@ void SDLPlotter::DrawLegend(Data *d)
   int w,h;
   int pad = 5;
   int height = 20;
-
   
+
+
   for(int i = 0; i<d->GetDataSetCount() ; i++)
   {
     TTF_SizeText(g->font, d->GetDataName(i), &w, &h);
@@ -412,8 +435,12 @@ void SDLPlotter::DrawLegend(Data *d)
     SDL_BlitSurface(canvas, NULL, g->screen, &dstrect);
     SDL_FreeSurface(canvas);
     int y = i*height + g->plot_margin_top - pad;
+
+    SDL_LockSurface(g->screen);
     aalineRGBA(g->screen, minX, y, maxX, y, colors[i].r, colors[i].g, colors[i].b, colors[i].a);
+    SDL_UnlockSurface(g->screen);
   }
+
 }
 
 int SDLPlotter::GetLegendWidth(Data *d)
@@ -438,6 +465,8 @@ int SDLPlotter::GetLegendWidth(Data *d)
 
 void SDLPlotter::InitPlot(Data *d)
 {
+  SDL_mutexP(plotSemaphore);
+
   SDLGraphics *g = GetGraphics();
 
   legend_width = GetLegendWidth(d);
@@ -447,4 +476,14 @@ void SDLPlotter::InitPlot(Data *d)
   g->plot_margin_right=10+legend_width;
   g->plot_margin_top=10+title_height;
   g->plot_margin_bottom=10+number_height;
+
+
+
 }
+
+void SDLPlotter::PlotFinished(Data *d)
+{
+  SDL_mutexV(plotSemaphore);
+}
+
+

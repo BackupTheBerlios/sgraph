@@ -91,6 +91,7 @@ int main(int argc, char **argv)
 
 	if(done == 1) 
 	{
+	  fprintf(stderr,"quitting\n");
 	  SDL_KillThread(painter);
 	  SDL_Quit();
 	  exit(0);

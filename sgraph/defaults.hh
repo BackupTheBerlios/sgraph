@@ -7,3 +7,4 @@
 #include <SDL/SDL.h>
 #include "SDL_ttf.h"
 #include "SDL_thread.h"
+#include "SDL_mutex.h"

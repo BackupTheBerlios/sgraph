@@ -127,6 +127,8 @@ public:
   virtual void DrawGrid(Data *d, View *v);
   virtual void DrawLegend(Data *d) {}
   virtual int GetLegendWidth(Data *d) { return 0; }
+  virtual void PlotFinished(Data *d) {}
+  virtual void QuitPlotting() { continuePlotting = 0; }
 
   virtual int NMaxXTicks() { return 5; }
   virtual int NMaxYTicks() { return 5; }
@@ -140,6 +142,7 @@ public:
   int UseGrid;
   int UseLegend;
   int plotCount;
+  int continuePlotting;
 };
 
 class SDLPlotter : public Plotter
@@ -153,13 +156,17 @@ public:
   virtual void DrawLegend(Data *d);
   virtual int GetLegendWidth(Data *d);
   virtual void InitPlot(Data *d);
+  virtual void PlotFinished(Data *d);
 
   SDLGraphics *GetGraphics();
 
   int number_width;
   int number_height;
   int legend_width;
-  int title_height;;
+  int title_height;
+
+  SDL_mutex *plotSemaphore;
+
 };
 
 #endif
