@@ -5,6 +5,7 @@
 #include "data.hh"
 #include "options.hh"
 #include "view.hh"
+#include "randfuncs.hh"
 
 // lower left and upper right positions
 class Color

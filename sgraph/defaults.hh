@@ -6,3 +6,4 @@
 #include "SDL_gfxPrimitives.h"
 #include <SDL/SDL.h>
 #include "SDL_ttf.h"
+#include "SDL_thread.h"

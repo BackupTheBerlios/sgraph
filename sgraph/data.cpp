@@ -52,6 +52,7 @@ void DataFile::Reset()
   OpenFile();
   RowCount=0;
   eofReached=0;
+  charCounter=0;
 }
 
 DataFile::~DataFile()

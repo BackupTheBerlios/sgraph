@@ -10,12 +10,13 @@ void SGraphOptions::usage()
   printf("Usage: sgraph file1.dat file2.dat file3.dat\n");
   printf("\n");
   printf("Simple data plotter (imitating xgraph, but trying to look cool)\n");
+  printf("use - for stdin\n");
   printf("\n");
   printf("Options: \n");
   printf("  -f --follow  Plots data in real time from file(s).\n");
   printf("  -u --update  Periodically check file(s) and update plot.\n");
   printf("\n");
-  printf("  Other xgraph options should work.\n");
+  printf("  Several other xgraph options should work.\n");
   printf("\n");
   printf("\n");
   
