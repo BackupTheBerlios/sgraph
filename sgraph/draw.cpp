@@ -59,6 +59,7 @@ SDLGraphics::SDLGraphics()
   
   SDL_SetAlpha(tmpSurface, 0, 255);
 
+  SDL_WM_SetCaption("SGraph",NULL);
 }
 
 Point *SDLGraphics::GetPlotAreaSize()
@@ -351,9 +352,6 @@ void Plotter::PlotData(Data *d, View *v)
 	  graphics->Updated();
       }
     }
-    DrawGrid(d,graphics->view);
-    DrawLegend(d);
-
     graphics->Updated();
     if(continuePlotting)
       dirty=0;
