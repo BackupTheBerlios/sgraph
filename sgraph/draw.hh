@@ -100,6 +100,7 @@ public:
   Point *plotArea;
 
   TTF_Font *font;
+  TTF_Font *titleFont;
 
   int done;
   int glob;

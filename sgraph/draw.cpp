@@ -35,6 +35,9 @@ SDLGraphics::SDLGraphics()
   TTF_Init();
   font=TTF_OpenFont("/usr/share/sgraph/cmss12.ttf", 12);
   TTF_SetFontStyle(font, TTF_STYLE_NORMAL);
+
+  titleFont=TTF_OpenFont("/usr/share/sgraph/cmss12.ttf", 18);
+  TTF_SetFontStyle(titleFont, TTF_STYLE_BOLD);
   
   p = new Point();
   view = new View();
@@ -368,7 +371,6 @@ void Plotter::DrawGrid(Data *d, View *view)
   }
 }
 
-
 /* SDL specific stuff */
 SDLPlotter::SDLPlotter(SGraphOptions *o, Data *d) : Plotter(o,d)
 {
@@ -421,8 +423,6 @@ void SDLPlotter::DrawLegend(Data *d)
   int pad = 5;
   int height = 20;
   
-
-
   for(int i = 0; i<d->GetDataSetCount() ; i++)
   {
     TTF_SizeText(g->font, d->GetDataName(i), &w, &h);
@@ -441,6 +441,16 @@ void SDLPlotter::DrawLegend(Data *d)
     SDL_UnlockSurface(g->screen);
   }
 
+  // render title
+  TTF_SizeText(g->titleFont, "SGraph", &w, &h);
+  dstrect.x = g->screen_width - pad - w;
+  dstrect.y = pad;
+  dstrect.w = w;
+  dstrect.h = h;
+  
+  canvas=TTF_RenderText_Blended(g->titleFont, "SGraph", color);
+  SDL_BlitSurface(canvas, NULL, g->screen, &dstrect);
+  SDL_FreeSurface(canvas);
 }
 
 int SDLPlotter::GetLegendWidth(Data *d)
@@ -465,7 +475,7 @@ int SDLPlotter::GetLegendWidth(Data *d)
 
 void SDLPlotter::InitPlot(Data *d)
 {
-  SDL_mutexP(plotSemaphore);
+  SDL_mutexP(plotSemaphore);  // syncronization... a thread drawing on a resized screen totally fucks up the program
 
   SDLGraphics *g = GetGraphics();
 
@@ -483,7 +493,7 @@ void SDLPlotter::InitPlot(Data *d)
 
 void SDLPlotter::PlotFinished(Data *d)
 {
-  SDL_mutexV(plotSemaphore);
+ SDL_mutexV(plotSemaphore);
 }
 
 
