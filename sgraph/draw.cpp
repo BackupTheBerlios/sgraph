@@ -67,80 +67,54 @@ Plotter::Plotter(SGraphOptions *o, Data *d)
     bg->b=0;
     bg->a=255;
   }
-
-  plotCount=0;
-  dirty=1;
 }
 
-//! This is currently thread safe to accomodate SDLPlotter, this will be changed with a more basic,
-// get data and plot functionality when we write another driver.
+//! A very simple plotting routine. Read all data, then plot it. Should be enough for a simple graphics backend
 void Plotter::PlotData(Data *d, View *v)
 {
   Point **points;
   Point *p = new Point();
   Point *lastPoint = new Point();
-  int c;
-  int slice=10000;
-  int morePoints=1;
-  int gotN=0;
 
-  QuitPlotting();
   InitPlot(d);  
-  continuePlotting=1;
-  
-  /* plot by slice */
-  while(morePoints > 0 && continuePlotting)
+
+  // read all data at once
+  for(int j=0; j<opts->NameCount ; j++)
   {
-    c=0;
-    morePoints=0;
-    for(int j=0; j<opts->NameCount ; j++)
+    while(d->MorePoints(j))
     {
-      while(d->MorePoints(j) && c < slice && continuePlotting)
-      {
-	d->ReadPoint(j);
-	gotN++;
-      }
-      morePoints += d->MorePoints(j);
+      d->ReadPoint(j);
     }
-    
-    if(v==NULL)
-      graphics->view = d->GetDefaultView();
-    else
-      graphics->view = v;
-    
-    if(gotN < 1 && !dirty)
+  }
+  
+  // if now view specified, use the default one that shows all data
+  if(v==NULL)
+    graphics->view = d->GetDefaultView();
+  else
+    graphics->view = v;
+  
+  graphics->Clear(bg);
+
+  DrawGrid(d,graphics->view);
+  DrawLegend(d);
+
+  // plot all data at once
+  for(int j=0; j<opts->NameCount ; j++)
+  {
+    points=d->GetPoints(j);
+    lastPoint = points[0];
+
+    for(int i=1; i< d->GetRowCount(j) && continuePlotting ; i++)
     {
-      PlotFinished(d);
-      return;
-    }
-
-    graphics->Clear(bg);
-
-    DrawGrid(d,graphics->view);
-    DrawLegend(d);
-
-    for(int j=0; j<opts->NameCount && continuePlotting ; j++)
-    {
-      points=d->GetPoints(j);
-      lastPoint = points[0];
-
-      for(int i=1; i< d->GetRowCount(j) && continuePlotting ; i++)
+      p=points[i];
+      if(p!=NULL) 
       {
-	p=points[i];
-	if(p!=NULL) 
-	{
-	  graphics->drawLine(lastPoint,p,&colors[j]); 
-	  lastPoint = points[i];
-	}
-	if(i%10000 == 0 && dirty)
-	  graphics->Updated();
+	graphics->drawLine(lastPoint,p,&colors[j]); 
+	lastPoint = points[i];
       }
     }
     graphics->Updated();
-    if(continuePlotting)
-      dirty=0;
   }
-  plotCount++;
   PlotFinished(d);
 }
 
@@ -189,8 +163,6 @@ void Plotter::DrawGrid(Data *d, View *view)
     sprintf(text,"%3g",x);
 
     graphics->drawText(text, p1, fg, ALIGN_CENTER, ALIGN_TOP);
-
-    //fprintf(stdout,"X axis %g %g %d\n",x,x*pow(10,expX),expX);
   }
   for(double y=ystart; y < maxYe && ystepRound > 0 ; y+= ystepRound )
   {
@@ -203,8 +175,6 @@ void Plotter::DrawGrid(Data *d, View *view)
 
     sprintf(text,"%3g",y);
     graphics->drawText(text, p1, fg, ALIGN_RIGHT, ALIGN_CENTER);
-
-    // fprintf(stdout,"Y axis %g %g %d\n",y,y*pow(10,expY),expY);
   }
 }
 

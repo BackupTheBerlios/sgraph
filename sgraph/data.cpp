@@ -12,10 +12,10 @@ DataFile::DataFile(char *n)
   logX=0;
   logY=0;
 
-  allocated=10000;
+  allocated=100000;
   eofReached=0;
   localCount=0;
-
+  
   points = (Point **)calloc(allocated,sizeof(Point *));
   for(int i=0; i<allocated ; i++)
   {
@@ -111,8 +111,10 @@ Point *DataFile::ReadRow()
     if(RowCount==(allocated-1))
     {
       int prevA = allocated;
-      allocated+=1000;
+
+      allocated+=10000;
       points=(Point **)realloc(points,allocated*sizeof(Point *));
+
       for(int t=prevA ; t<allocated ; t++)
       {
 	points[t] = new Point();
@@ -173,6 +175,7 @@ Data::Data(SGraphOptions *o)
     dataFiles[i] = new DataFile(opts->FileNames[i]);
   }
   defaultView = new View();
+
 }
 
 Data::~Data() 
@@ -277,3 +280,5 @@ int Data::GetDataSetCount()
 {
   return opts->NameCount;
 }
+
+
