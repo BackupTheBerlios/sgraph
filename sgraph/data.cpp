@@ -27,6 +27,7 @@ DataFile::DataFile(char *n)
   charCounter=0;
 }
 
+
 void DataFile::OpenFile()
 {
   if(!strcmp(name,"-") || !strcmp(name,"stdin"))
@@ -50,9 +51,13 @@ void DataFile::Reset()
 {
   CloseFile();
   OpenFile();
-  RowCount=0;
+
+  if(handle!=stdin) 
+  {
+    RowCount=0;
+    charCounter=0;
+  }
   eofReached=0;
-  charCounter=0;
 }
 
 DataFile::~DataFile()
@@ -61,6 +66,7 @@ DataFile::~DataFile()
   free(points);
 }
 
+//! are there more data rows available in file
 int DataFile::MoreData()
 {
   if(eofReached == 0)
@@ -69,10 +75,6 @@ int DataFile::MoreData()
     return 0;
 }
 
-/*
-  read one point from file in succsessive manner 
-  todo, multicolumn
- */
 Point *DataFile::ReadRow()
 {
   char l[2000]; // 2000 should be enough for everyone
@@ -147,16 +149,18 @@ Point *DataFile::ReadRow()
   }
 }
 
-// get all data read until now
+
 Point **DataFile::GetData()
 {
   return points;
 }
 
+
 int DataFile::GetRowCount()
 {
   return RowCount;
 }
+
 
 Data::Data(SGraphOptions *o)
 {
@@ -227,8 +231,12 @@ void Data::SetEofReached(int e)
 }
 
 
+/*
+  @return The limits of all datasets
+ */
 View *Data::GetDefaultView()
 {
+
   *defaultView->ll->x = dataFiles[0]->minX;
   *defaultView->ll->y = dataFiles[0]->minY;
   *defaultView->ur->x = dataFiles[0]->maxX;

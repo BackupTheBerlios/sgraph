@@ -31,6 +31,7 @@ public:
   int update;
   int histogram;
   int histogram2d;
+  int reverse;
   char *FileNames[100];
 };
 

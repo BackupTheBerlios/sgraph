@@ -14,7 +14,13 @@
 #define ALIGN_CENTER 5
 
 
-// lower left and upper right positions
+//! Internal color 
+/*!
+  \param a an integer argument.
+  \param s a constant character pointer.
+  \return The test results
+  \sa Test(), ~Test(), testMeToo() and publicVar()
+*/
 class Color
 {
 public:
@@ -24,36 +30,39 @@ public:
   int a;
 };
 
-// override to support different renderers.. eg. BMPGraphics
+//! Low level graphics primitives interface
 class Graphics 
 {
 public:
   Graphics() {}
   virtual ~Graphics() {}
 
-  // line
+  //! line
   virtual void drawLine(Point *from, Point *to, Color *col) {}
 
-  // one pixel point
+  //! one pixel point
   virtual void drawPoint(Point *p, Color *col) {}
 
-  // filled rectangle
+  //! filled rectangle 
   virtual void drawRect(Point *ll, Point *ur, Color *col) {}
 
-  // circle
+  //! circle
   virtual void drawCircle(Point *center, int rad, Color *col) {}
 
-  // draw text at position lower left. Font size fixed
+  //! draw text at position lower left. Font size fixed
   virtual void drawText(char *str, Point *ll, Color *fg, int alignx, int aligny) {}
 
-  virtual void Clear() {}
-  // update plot
+  //! clear screen with color bg
+  virtual void Clear(Color *bg) {}
+
+  //! update plot (eg. flip buffer)
   virtual void Updated() {}
   
+  //! The view in data-coordinates (is used eg., to translate data to pixels or vice versa)
   View *view;
 };
 
-// render abstract data-valued graphics with pixels on screen (and cool anti-aliasing)
+//! SDL implementation of the Graphics interface with SDL_gfx and SDL_ttf
 class SDLGraphics : public Graphics
 {
 public:
@@ -76,7 +85,7 @@ public:
   // draw text at position lower left. Font size fixed
   virtual void drawText(char *str, Point *p, Color *fg, int alignx, int aligny);
 
-  virtual void Clear();
+  virtual void Clear(Color *bg);
   
   /* internal funcs */ 
 
@@ -97,26 +106,29 @@ public:
 
   Point *p;
   SDL_Surface *screen;
+
+  // temporary surface used for mouse selection
+  SDL_Surface *tmp;
   Point *plotArea;
 
   TTF_Font *font;
   TTF_Font *titleFont;
 
-  int done;
-  int glob;
-  
   int screen_height;
   int screen_width;
 
+  //! margin is the space reserved for labels and text
   int plot_margin_right;
+  //! margin is the space reserved for labels and text
   int plot_margin_left;
+  //! margin is the space reserved for labels and text
   int plot_margin_top;
+  //! margin is the space reserved for labels and text
   int plot_margin_bottom;
 
 };
 
-// Plot data to given graphics context override to support
-// eg. SDLPlotter, GLEPlotter (maybe StreamedPlotter and UpdatingPlotter)
+//! Abstract plotter class. Contains nearly all of the functionality, but cannot be instantiated. 
 class Plotter
 {
 public:
@@ -129,7 +141,7 @@ public:
   virtual void DrawLegend(Data *d) {}
   virtual int GetLegendWidth(Data *d) { return 0; }
   virtual void PlotFinished(Data *d) {}
-  virtual void QuitPlotting() { continuePlotting = 0; }
+  virtual void QuitPlotting() { continuePlotting = 0; dirty=1; }
 
   virtual int NMaxXTicks() { return 5; }
   virtual int NMaxYTicks() { return 5; }
@@ -144,8 +156,12 @@ public:
   int UseLegend;
   int plotCount;
   int continuePlotting;
+
+  // is plot stale
+  int dirty;
 };
 
+//! SDL specific portions. Mainly screen semaphores and label font metrics.
 class SDLPlotter : public Plotter
 {
 public:

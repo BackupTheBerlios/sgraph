@@ -8,3 +8,6 @@ sgraph_SOURCES = sgraph.cpp data.hh data.cpp draw.hh draw.cpp options.hh options
 install-data-local: 
 	$(INSTALL) -d $(DESTDIR)/usr/share/sgraph
 	$(INSTALL) $(srcdir)/cmss12.ttf $(DESTDIR)/usr/share/sgraph/cmss12.ttf
+
+doxygen:
+	doxygen && cd doc/doxygen/latex && make

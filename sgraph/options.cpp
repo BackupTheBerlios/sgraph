@@ -13,8 +13,9 @@ void SGraphOptions::usage()
   printf("use - for stdin\n");
   printf("\n");
   printf("Options: \n");
-  printf("  -f --follow  Plots data in real time from file(s).\n");
-  printf("  -u --update  Periodically check file(s) and update plot.\n");
+  printf("  -f --follow         Plots data in real time from file(s).\n");
+  printf("  -u --update         Periodically check file(s) and update plot.\n");
+  printf("  -r --reverse-video  Black on white (causes eye-damage in high doses).\n");
   printf("\n");
   printf("  Several other xgraph options should work.\n");
   printf("\n");
@@ -33,6 +34,7 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
 
   histogram=0;
   histogram2d=0;
+  reverse=0;
 
   while (1) 
   {
@@ -46,10 +48,11 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
       {"update", 0, 0, 0},
       {"histogram", 0, 0, 0},
       {"2d-histogram", 0, 0, 0},
+      {"reverse-video", 0, 0, 0},
       {0, 0, 0, 0}
     };
     
-    c = getopt_long (argc, argv, "fuh2", long_options, &option_index);
+    c = getopt_long (argc, argv, "fuh2r", long_options, &option_index);
     if (c == -1)
       break;
     
@@ -60,6 +63,12 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
 	follow=1;
       if(option_index == 1)
 	update=1;
+      if(option_index == 2)
+	update=1;
+      if(option_index == 3)
+	update=1;
+      if(option_index == 4)
+	reverse=1;
       break;
 
     case 'f':
@@ -73,6 +82,9 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
       break;
     case '2':
       histogram2d=1;
+      break;
+    case 'r':
+      reverse=1;
       break;
 
     default:

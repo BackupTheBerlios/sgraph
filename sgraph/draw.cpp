@@ -4,10 +4,12 @@
 #define DEFAULT_HEIGHT 480
 #define DEFAULT_DEPTH 32
 #define NUM_LEVELS 256
-#define SGN(x) ((x)>0 ? 1 : ((x)==0 ? 0:(-1)))
-#define ABS(x) ((x)>0 ? (x) : (-x))
-#define FG_COLOR colors[0]
-#define BG_COLOR colors[nlevels-1];
+#ifndef MIN
+#define MIN(a,b) (((a)<(b)) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a,b) (((a)>(b)) ? (a) : (b))
+#endif
 
 SDLGraphics::~SDLGraphics()
 {
@@ -25,12 +27,19 @@ SDLGraphics::SDLGraphics()
   }
   atexit(SDL_Quit);
     
-  screen=SDL_SetVideoMode(DEFAULT_WIDTH,DEFAULT_HEIGHT,DEFAULT_DEPTH,SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_RESIZABLE);
+  screen=SDL_SetVideoMode(DEFAULT_WIDTH,DEFAULT_HEIGHT,DEFAULT_DEPTH,SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_RESIZABLE);
   if ( screen == NULL )
   {
     fprintf(stderr,"Unable to set 640x480 video: %s\n", SDL_GetError());
     exit(1);
   }
+  tmp = SDL_CreateRGBSurface(SDL_HWSURFACE|SDL_SRCALPHA, DEFAULT_WIDTH, DEFAULT_HEIGHT,
+			     screen->format->BitsPerPixel,
+			     screen->format->Rmask,
+			     screen->format->Gmask,
+			     screen->format->Bmask,
+			     screen->format->Amask);
+
 
   TTF_Init();
   font=TTF_OpenFont("/usr/share/sgraph/cmss12.ttf", 12);
@@ -62,6 +71,13 @@ void SDLGraphics::SetScreenSize(int w, int h)
   screen_width=w;
   SDL_LockSurface(screen);
   screen=SDL_SetVideoMode(screen_width, screen_height, DEFAULT_DEPTH,SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_RESIZABLE);
+  SDL_FreeSurface(tmp);
+  tmp = SDL_CreateRGBSurface(0, screen_width, screen_height,
+			     screen->format->BitsPerPixel,
+			     screen->format->Rmask,
+			     screen->format->Gmask,
+			     screen->format->Bmask,
+			     screen->format->Amask);
   SDL_UnlockSurface(screen);
 }
 
@@ -181,10 +197,10 @@ void SDLGraphics::Updated()
 }
 
 
-void SDLGraphics::Clear()
+void SDLGraphics::Clear(Color *bg)
 {
   SDL_LockSurface(screen);
-  boxRGBA(screen, 0, 0, screen_width, screen_height, 0,0,0, 255);
+  boxRGBA(screen, 0, 0, screen_width, screen_height, bg->r, bg->g, bg->b, 255);
   SDL_UnlockSurface(screen);
 }
 
@@ -192,27 +208,31 @@ void Plotter::CreateColors(SGraphOptions *o)
 {
   colors = new Color[o->NameCount];
   srandom(0x4242);
+  int brightness=155;
+  if(o->reverse)
+    brightness=0;
   for(int i=0; i<o->NameCount ; i++)
   {
+
     int c=(int)floor(genrand()*3);
     if(c==0)
     {
       colors[i].r = 255;
-      colors[i].g = (int)floor( 50*genrand() + 155);
-      colors[i].b = (int)floor( 50*genrand() + 155);
+      colors[i].g = (int)floor( 50*genrand() + brightness);
+      colors[i].b = (int)floor( 50*genrand() + brightness);
     }
     if(c==1)
     {
       colors[i].g = 255;
-      colors[i].r = (int)floor( 50*genrand() + 155);
-      colors[i].b = (int)floor( 50*genrand() + 155);
+      colors[i].r = (int)floor( 50*genrand() + brightness);
+      colors[i].b = (int)floor( 50*genrand() + brightness);
     }
 
     if(c==2)
     {
       colors[i].b = 255;
-      colors[i].r = (int)floor( 50*genrand() + 155);
-      colors[i].g = (int)floor( 50*genrand() + 155);
+      colors[i].r = (int)floor( 50*genrand() + brightness);
+      colors[i].g = (int)floor( 50*genrand() + brightness);
     }
 
     colors[i].a = 255;
@@ -227,17 +247,33 @@ Plotter::Plotter(SGraphOptions *o, Data *d)
   fg = new Color();
   bg = new Color();
 
-  fg->r=255;
-  fg->g=255;
-  fg->b=255;
-  fg->a=70;
-  
-  bg->r=0;
-  bg->g=0;
-  bg->b=0;
-  bg->a=255;
+  if(o->reverse)
+  {
+    fg->r=0;
+    fg->g=0;
+    fg->b=0;
+    fg->a=200;
+    
+    bg->r=255;
+    bg->g=255;
+    bg->b=255;
+    bg->a=255;
+  }
+  else 
+  {
+    fg->r=255;
+    fg->g=255;
+    fg->b=255;
+    fg->a=70;
+    
+    bg->r=0;
+    bg->g=0;
+    bg->b=0;
+    bg->a=255;
+  }
 
   plotCount=0;
+  dirty=1;
 }
 
 void Plotter::PlotData(Data *d, View *v)
@@ -246,9 +282,11 @@ void Plotter::PlotData(Data *d, View *v)
   Point *p = new Point();
   Point *lastPoint = new Point();
   int c;
-  int slice=100000;
+  int slice=10000;
   int morePoints=1;
+  int gotN=0;
 
+  QuitPlotting();
   InitPlot(d);  
   continuePlotting=1;
   
@@ -260,17 +298,25 @@ void Plotter::PlotData(Data *d, View *v)
     for(int j=0; j<opts->NameCount ; j++)
     {
       while(d->MorePoints(j) && c < slice && continuePlotting)
+      {
 	d->ReadPoint(j);
+	gotN++;
+      }
       morePoints += d->MorePoints(j);
     }
-
+    
     if(v==NULL)
       graphics->view = d->GetDefaultView();
     else
       graphics->view = v;
     
-    graphics->Clear();
-    
+    if(gotN < 1 && !dirty)
+    {
+      PlotFinished(d);
+      return;
+    }
+
+    graphics->Clear(bg);
 
     DrawGrid(d,graphics->view);
     DrawLegend(d);
@@ -288,23 +334,19 @@ void Plotter::PlotData(Data *d, View *v)
 	  graphics->drawLine(lastPoint,p,&colors[j]);
 	  lastPoint = points[i];
 	}
-	if(i%10000 == 0)
+	if(i%10000 == 0 && dirty)
 	  graphics->Updated();
       }
     }
     graphics->Updated();
+    if(continuePlotting)
+      dirty=0;
   }
   plotCount++;
   PlotFinished(d);
 }
 
 
-#ifndef MIN
-#define MIN(a,b) (((a)<(b)) ? (a) : (b))
-#endif
-#ifndef MAX
-#define MAX(a,b) (((a)>(b)) ? (a) : (b))
-#endif
 
 
 // similar grid drawing as in xgraph
@@ -486,9 +528,6 @@ void SDLPlotter::InitPlot(Data *d)
   g->plot_margin_right=10+legend_width;
   g->plot_margin_top=10+title_height;
   g->plot_margin_bottom=10+number_height;
-
-
-
 }
 
 void SDLPlotter::PlotFinished(Data *d)
