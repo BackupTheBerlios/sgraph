@@ -124,6 +124,8 @@ public:
   //! margin is the space reserved for labels and text
   int plot_margin_bottom;
 
+  SDL_mutex *plotSemaphore;
+
 };
 
 //! Abstract plotter class. Contains nearly all of the functionality, but cannot be instantiated. 
@@ -180,7 +182,7 @@ public:
   int legend_width;
   int title_height;
 
-  SDL_mutex *plotSemaphore;
+
 
 };
 

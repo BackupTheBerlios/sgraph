@@ -60,6 +60,9 @@ SDLGraphics::SDLGraphics()
   SDL_SetAlpha(tmpSurface, 0, 255);
 
   SDL_WM_SetCaption("SGraph",NULL);
+
+  // prevent seperate threads from tampering the plot at the same time.
+  plotSemaphore = SDL_CreateMutex();
 }
 
 Point *SDLGraphics::GetPlotAreaSize()
@@ -73,6 +76,7 @@ Point *SDLGraphics::GetPlotAreaSize()
 
 void SDLGraphics::SetScreenSize(int w, int h)
 {
+  SDL_mutexP(plotSemaphore);
   screen_height=h;
   screen_width=w;
   SDL_LockSurface(screen);
@@ -88,35 +92,28 @@ void SDLGraphics::SetScreenSize(int w, int h)
   if(tmpSurface==NULL)
     fprintf(stdout,"Creating tmp surface failed\n");
   SDL_SetAlpha(tmpSurface, 0, 255);
-
+  
+  SDL_mutexV(plotSemaphore);
 }
 
 void SDLGraphics::drawLine(Point *from, Point *to, Color *col)
 {
-  SDL_LockSurface(screen);
   aalineRGBA(screen, PointToPixelX(from), PointToPixelY(from), PointToPixelX(to), PointToPixelY(to), col->r, col->g, col->b, col->a);
-  SDL_UnlockSurface(screen);
 }
 
 void SDLGraphics::drawPoint(Point *p, Color *col)
 {
-  SDL_LockSurface(screen);
   pixelRGBA(screen, PointToPixelX(p), PointToPixelY(p), col->r, col->g, col->b, col->a);
-  SDL_UnlockSurface(screen);
 }
 
 void SDLGraphics::drawRect(Point *ll, Point *ur, Color *col)
 {
-  SDL_LockSurface(screen);
   rectangleRGBA(screen, PointToPixelX(ll), PointToPixelY(ll), PointToPixelX(ur), PointToPixelY(ur), col->r, col->g, col->b, col->a);
-  SDL_UnlockSurface(screen);
 }
 
 void SDLGraphics::drawCircle(Point *center, int rad, Color *col)
 {
-  SDL_LockSurface(screen);
   circleRGBA(screen, PointToPixelX(center), PointToPixelY(center), rad, col->r, col->g, col->b, col->a);
-  SDL_UnlockSurface(screen);
 }
 
 void SDLGraphics::drawText(char *str, Point *ll, Color *fg, int alignx, int aligny)
@@ -436,7 +433,7 @@ SDLPlotter::SDLPlotter(SGraphOptions *o, Data *d) : Plotter(o,d)
   number_width = 70;
   number_height = 20;
 
-  plotSemaphore = SDL_CreateMutex();
+
 }
 
 int SDLPlotter::NMaxXTicks()
@@ -531,9 +528,9 @@ int SDLPlotter::GetLegendWidth(Data *d)
 
 void SDLPlotter::InitPlot(Data *d)
 {
-  SDL_mutexP(plotSemaphore);  // syncronization... a thread drawing on a resized screen totally fucks up the program
-
   SDLGraphics *g = GetGraphics();
+
+  SDL_mutexP(g->plotSemaphore);  // syncronization... a thread drawing on a resized screen totally fucks up the program
 
   legend_width = GetLegendWidth(d);
   title_height = 30;
@@ -546,7 +543,8 @@ void SDLPlotter::InitPlot(Data *d)
 
 void SDLPlotter::PlotFinished(Data *d)
 {
- SDL_mutexV(plotSemaphore);
+  SDLGraphics *g = GetGraphics();
+  SDL_mutexV(g->plotSemaphore);
 }
 
 

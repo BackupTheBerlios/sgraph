@@ -45,7 +45,9 @@ int paint(void *unused)
 
 void SaveRegion()
 {
+  SDL_mutexP(graphics->plotSemaphore);
   int code = SDL_BlitSurface(graphics->screen, &zoomRect, graphics->tmpSurface, &zoomRect);
+  SDL_mutexV(graphics->plotSemaphore);
 }
 
 int FilterEvents(const SDL_Event *event) 
@@ -56,6 +58,7 @@ int FilterEvents(const SDL_Event *event)
   {
     if ( event->button.button == SDL_BUTTON_LEFT  && zoomSelection )
     {
+      SDL_mutexP(graphics->plotSemaphore);
       zoomSelection = 0;
       int code = SDL_BlitSurface(graphics->tmpSurface, &zoomRect, graphics->screen, &zoomRect);
       SDL_UpdateRect(graphics->screen, zoomRect.x, zoomRect.y, zoomRect.w, zoomRect.h);
@@ -69,6 +72,9 @@ int FilterEvents(const SDL_Event *event)
       p1= graphics->PixelsToPoint(zoomRect.x+zoomRect.w, zoomRect.y);
       *customView->ur->x = *p1->x;
       *customView->ur->y = *p1->y;
+
+      SDL_mutexV(graphics->plotSemaphore);
+
       plotter->PlotData(d, customView);
     }
 
@@ -84,13 +90,19 @@ int FilterEvents(const SDL_Event *event)
   {
     if(zoomSelection) 
     {
+
+
       SDL_GetMouseState(&x, &y);
       // erase previous selection
       int t=SDL_GetTicks();
       if((t-mouseTicks) > 50)
       {
+
+	SDL_mutexP(graphics->plotSemaphore);
+
 	// revert
 	int code = SDL_BlitSurface(graphics->tmpSurface, &zoomRect, graphics->screen, &zoomRect);
+	SDL_mutexV(graphics->plotSemaphore);
 	SDL_Rect old;
 	old.x=zoomRect.x;
 	old.y=zoomRect.y;
@@ -118,8 +130,11 @@ int FilterEvents(const SDL_Event *event)
 	  zoomRect.h = y-zoomRect.y;
 	}
 
+
 	SaveRegion();
 	// draw new selection
+	SDL_mutexP(graphics->plotSemaphore);
+
 	rectangleRGBA(graphics->screen, 
 		      zoomRect.x+2,
 		      zoomRect.y+2, 
@@ -140,12 +155,26 @@ int FilterEvents(const SDL_Event *event)
 	prevX=x;
 	prevY=y;
 	mouseTicks=SDL_GetTicks();
+	SDL_mutexV(graphics->plotSemaphore);
       }
     }
     return(0);
   } 
   if( event->type == SDL_MOUSEBUTTONDOWN ) 
   {
+    // roller mouse
+    if(SDL_GetMouseState(&x,&y)&SDL_BUTTON(4) && !zoomSelection)
+    {
+      fprintf(stdout,"Zoom out\n");
+    }
+
+    if(SDL_GetMouseState(&x,&y)&SDL_BUTTON(5) && !zoomSelection)
+    {
+      fprintf(stdout,"Zoom in\n");
+      
+    }
+
+
     if ( event->button.button == SDL_BUTTON_LEFT && !zoomSelection )
     {
       SDL_GetMouseState(&x, &y);
@@ -221,6 +250,7 @@ int main(int argc, char **argv)
 	} else
 	if( event.type == SDL_VIDEORESIZE ) 
 	{
+
 	  graphics->SetScreenSize(event.resize.w, event.resize.h);
 	  plotter->PlotData(d,customView);
 	} 
