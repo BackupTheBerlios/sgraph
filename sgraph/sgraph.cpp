@@ -41,7 +41,7 @@ int main(int argc, char **argv)
   
   d=new Data(opts);
 
-  plotter = new SDLPlotter(opts);
+  plotter = new SDLPlotter(opts,d);
   if(opts->follow)
   {
     ticks=100;
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 	if( event.type == SDL_VIDEORESIZE ) 
 	{
 	  graphics->SetScreenSize(event.resize.w, event.resize.h);
-	  plotter->PlotData(d,NULL);	  
+	  plotter->PlotData(d,NULL);
 	}
 
 	if(done == 1) 

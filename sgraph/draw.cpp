@@ -32,15 +32,25 @@ SDLGraphics::SDLGraphics()
     exit(1);
   }
 
-  /*    TTF_Init();
-	font=TTF_OpenFont("cmss12.ttf", 12);
-	TTF_SetFontStyle(font, TTF_STYLE_NORMAL);*/
+  TTF_Init();
+  font=TTF_OpenFont("/usr/share/sgraph/cmss12.ttf", 12);
+  TTF_SetFontStyle(font, TTF_STYLE_NORMAL);
   
   p = new Point();
   view = new View();
+  plotArea = new Point();
+
   screen_height=DEFAULT_HEIGHT;
   screen_width=DEFAULT_WIDTH;
 }
+
+Point *SDLGraphics::GetPlotAreaSize()
+{
+  *plotArea->x = screen_width - plot_margin_right - plot_margin_left;
+  *plotArea->y = screen_height - plot_margin_top - plot_margin_bottom;
+  return plotArea;
+}
+
 
 void SDLGraphics::SetScreenSize(int w, int h)
 {
@@ -69,9 +79,48 @@ void SDLGraphics::drawCircle(Point *center, int rad, Color *col)
   circleRGBA(screen, PointToPixelX(center), PointToPixelY(center), rad, col->r, col->g, col->b, col->a);
 }
 
-void SDLGraphics::drawText(char *str, Point *ll, Color *fg)
+void SDLGraphics::drawText(char *str, Point *ll, Color *fg, int alignx, int aligny)
 {
-  // todo
+  SDL_Color color = { fg->r, fg->g , fg->b, 0 };
+  SDL_Rect dstrect;
+  SDL_Surface *canvas;
+  int w,h;
+  int pad = 5;
+
+  TTF_SizeText(font, str, &w, &h);
+
+  if(alignx == ALIGN_LEFT)
+  {
+    dstrect.x = (int)floor(PointToPixelX(ll))+pad;
+  }
+  if(alignx == ALIGN_RIGHT)
+  {
+    dstrect.x = (int)floor(PointToPixelX(ll))- w - pad;
+  }
+  if(alignx == ALIGN_CENTER)
+  {
+    dstrect.x = (int)floor(PointToPixelX(ll) - w/2.0);
+  }
+
+  if(aligny == ALIGN_CENTER)
+  {
+    dstrect.y = (int)floor(PointToPixelY(ll) - h/2.0);
+  }
+  if(aligny == ALIGN_BOTTOM)
+  {
+    dstrect.y = (int)floor(PointToPixelY(ll) - h - pad);
+  }
+  if(aligny == ALIGN_TOP)
+  {
+    dstrect.y = (int)floor(PointToPixelY(ll) + pad);
+  }
+
+  dstrect.w = w;
+  dstrect.h = h;
+
+  canvas=TTF_RenderText_Blended(font, str, color);
+  SDL_BlitSurface(canvas, NULL, screen, &dstrect);
+  SDL_FreeSurface(canvas);
 }
 // translation
 int SDLGraphics::PointToPixelX(Point *p)
@@ -152,42 +201,8 @@ void Plotter::CreateColors(SGraphOptions *o)
   }
 }
 
-// similar grid drawing as in xgraph
-void Plotter::DrawGrid(Data *d, View *view)
-{
-  int     expX,expY;
-  Point *p1 = new Point();
-  Point *p2 = new Point();
 
-  double minY = *view->ll->y;
-  double maxY = *view->ur->y;
-
-  double minX = *view->ll->x;
-  double maxX = *view->ur->x;
-
-  double xstep =  (maxX-minX)/5.0;
-  double ystep =  (maxY-minY)/5.0;
-
-  for(double x=minX; x<maxX+1 ; x+= xstep )
-  {
-    *p1->x=x;
-    *p1->y=minY;
-    *p2->x=x;
-    *p2->y=maxY;
-    graphics->drawLine(p1,p2,fg);    
-  }
-  for(double y=minY; y<maxY+1 ; y+= ystep )
-  {
-    *p1->x=minX;
-    *p1->y=y;
-
-    *p2->x=maxX;
-    *p2->y=y;
-    graphics->drawLine(p1,p2,fg);
-  }
-}
-
-Plotter::Plotter(SGraphOptions *o) 
+Plotter::Plotter(SGraphOptions *o, Data *d) 
 {
   opts=o;  
   CreateColors(opts);
@@ -205,30 +220,6 @@ Plotter::Plotter(SGraphOptions *o)
   bg->a=255;
 
   plotCount=0;
-}
-
-SDLPlotter::SDLPlotter(SGraphOptions *o) : Plotter(o)
-{
-  SDLGraphics *g = new SDLGraphics();
-
-  number_width = 70;
-  number_height = 20;
-
-  // todo determine legend width from options (largest string)
-  legend_width = 100;
-  title_height = 20;
-
-  g->plot_margin_left=10+number_width;
-  g->plot_margin_right=10+legend_width;
-  g->plot_margin_top=10+title_height;
-  g->plot_margin_bottom=10+number_height;
-  
-  graphics=(Graphics *) g;
-}
-
-SDLGraphics *SDLPlotter::GetGraphics()
-{
-  return (SDLGraphics *)graphics;
 }
 
 void Plotter::PlotData(Data *d, View *v)
@@ -259,7 +250,9 @@ void Plotter::PlotData(Data *d, View *v)
     
     graphics->Clear();
     
+    InitPlot(d);
     DrawGrid(d,graphics->view);
+    DrawLegend(d);
 
     for(int j=0; j<opts->NameCount ; j++)
     {
@@ -283,3 +276,175 @@ void Plotter::PlotData(Data *d, View *v)
   plotCount++;
 }
 
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b)) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a,b) (((a)>(b)) ? (a) : (b))
+#endif
+
+
+// similar grid drawing as in xgraph
+void Plotter::DrawGrid(Data *d, View *view)
+{
+  int expX,expY;
+  char text[100];
+
+  Point *p1 = new Point();
+  Point *p2 = new Point();
+
+  double minY = *view->ll->y;
+  double maxY = *view->ur->y;
+
+  double minX = *view->ll->x;
+  double maxX = *view->ur->x;
+
+  double minYe, maxYe, minXe, maxXe;
+
+  expX = (int)floor(log10(MAX(fabs(minX),fabs(maxX)))/4.0);
+  expY = (int)floor(log10(MAX(fabs(minY),fabs(maxY)))/4.0);
+
+  minYe = minY/(pow(10,expY));
+  maxYe = maxY/(pow(10,expY));
+  minXe = minX/(pow(10,expX));
+  maxXe = maxX/(pow(10,expX));
+
+  double xstep =  (maxXe-minXe)/NMaxXTicks();
+  double ystep =  (maxYe-minYe)/NMaxYTicks();
+
+  double xstepRound =  floor(xstep*1000.0)/1000.0;
+  double ystepRound =  floor(ystep*1000.0)/1000.0;
+  double xstart= ceil(minXe*1000.0)/1000.0;
+  double ystart= ceil(minYe*1000.0)/1000.0;
+  
+  for(double x=xstart; x < maxXe ; x+= xstepRound )
+  {
+    *p1->x=x*pow(10,expX);
+    *p1->y=minY;
+    *p2->x=x*pow(10,expX);
+    *p2->y=maxY;
+    graphics->drawLine(p1,p2,fg); 
+
+    sprintf(text,"%3g",x);
+
+    graphics->drawText(text, p1, fg, ALIGN_CENTER, ALIGN_TOP);
+
+    fprintf(stdout,"X axis %g %g %d\n",x,x*pow(10,expX),expX);
+  }
+  for(double y=ystart; y< maxYe ; y+= ystepRound )
+  {
+    *p1->x=minX;
+    *p1->y=y*pow(10,expY);
+
+    *p2->x=maxX;
+    *p2->y=y*pow(10,expY);
+    graphics->drawLine(p1,p2,fg);
+
+    sprintf(text,"%3g",y);
+    graphics->drawText(text, p1, fg, ALIGN_RIGHT, ALIGN_CENTER);
+
+    fprintf(stdout,"Y axis %g %g %d\n",y,y*pow(10,expY),expY);
+  }
+}
+
+
+/* SDL specific stuff */
+SDLPlotter::SDLPlotter(SGraphOptions *o, Data *d) : Plotter(o,d)
+{
+  SDLGraphics *g = new SDLGraphics();
+  graphics=(Graphics *) g;
+
+  number_width = 70;
+  number_height = 20;
+}
+
+int SDLPlotter::NMaxXTicks()
+{
+  // todo, take into account font size and plot size 
+  SDLGraphics *g=GetGraphics();
+  Point *area = g->GetPlotAreaSize();
+  return (int)floor((*area->x)/200);
+}
+
+int SDLPlotter::NMaxYTicks()
+{
+  SDLGraphics *g=GetGraphics();
+  Point *area = g->GetPlotAreaSize();
+  return (int)floor((*area->y)/50);
+}
+
+SDLGraphics *SDLPlotter::GetGraphics()
+{
+  return (SDLGraphics *)graphics;
+}
+
+
+/*
+  SDL specific legend drawing routine
+
+ */
+void SDLPlotter::DrawLegend(Data *d)
+{
+  SDLGraphics *g = GetGraphics();
+  int width = GetLegendWidth(d);
+  Point *p=g->GetPlotAreaSize();
+  int padding = 5;
+  int minX = (int)*p->x + padding + g->plot_margin_left;
+  int maxX = g->screen_width - padding;
+  SDL_Color color = { fg->r, fg->g , fg->b, 0 };
+  SDL_Rect dstrect;
+  SDL_Surface *canvas;
+  int w,h;
+  int pad = 5;
+  int height = 20;
+
+  
+  for(int i = 0; i<d->GetDataSetCount() ; i++)
+  {
+    TTF_SizeText(g->font, d->GetDataName(i), &w, &h);
+    dstrect.x = minX;
+    dstrect.y = i*height + g->plot_margin_top;
+    dstrect.w = w;
+    dstrect.h = h;
+    
+    canvas=TTF_RenderText_Blended(g->font, d->GetDataName(i), color);
+    SDL_BlitSurface(canvas, NULL, g->screen, &dstrect);
+    SDL_FreeSurface(canvas);
+    int y = i*height + g->plot_margin_top - pad;
+    aalineRGBA(g->screen, minX, y, maxX, y, colors[i].r, colors[i].g, colors[i].b, colors[i].a);
+  }
+}
+
+int SDLPlotter::GetLegendWidth(Data *d)
+{
+  SDLGraphics *g = GetGraphics();
+  int w,h,maxW,maxH;
+  int padding=5;
+  
+  maxW=0;
+  maxH=0;
+
+  for(int i = 0; i<d->GetDataSetCount() ; i++)
+  {
+    TTF_SizeText(g->font, d->GetDataName(i), &w, &h);    
+    if(w>maxW)
+      maxW=w;
+    if(h>maxH)
+      maxH=h;
+  }
+  return maxW+2*padding;
+}
+
+void SDLPlotter::InitPlot(Data *d)
+{
+  SDLGraphics *g = GetGraphics();
+
+  legend_width = GetLegendWidth(d);
+  title_height = 30;
+  
+  g->plot_margin_left=10+number_width;
+  g->plot_margin_right=10+legend_width;
+  g->plot_margin_top=10+title_height;
+  g->plot_margin_bottom=10+number_height;
+}

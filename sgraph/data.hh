@@ -5,6 +5,9 @@
 #include "view.hh"
 #include "options.hh"
 
+/*
+  One dataset per file (two column format) 
+ */
 class DataFile
 {
 public:
@@ -26,6 +29,12 @@ public:
   int logX, logY, RowCount, allocated, eofReached, localCount, charCounter, lastModified;
 };
 
+/*
+  abstract data class, contains N data sets
+  currently the implementation is oriented
+  to one data-set/file type of data, although this could
+  change in the future.
+ */
 class Data
 { 
 public:
@@ -34,12 +43,18 @@ public:
 
   View *GetDefaultView();
   DataFile **GetDataFiles();
-  Point *ReadPoint(int col);
-  int MorePoints(int col);
+  Point *ReadPoint(int n);
+  int MorePoints(int n);
   void ResetData();
-  Point **GetPoints(int col);
-  int GetRowCount(int col);
+  Point **GetPoints(int n);
+  int GetRowCount(int n);
+
+  // hmm. kludge to enable following files
   void SetEofReached(int e);
+
+  char *GetDataName(int n);
+
+  int GetDataSetCount();
 
   View *defaultView;
   DataFile **dataFiles;

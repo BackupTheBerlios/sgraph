@@ -254,3 +254,18 @@ View *Data::GetDefaultView()
   }
   return defaultView;
 }
+
+/* */
+char *Data::GetDataName(int n)
+{
+  char *fname = opts->FileNames[n];
+  
+  // parse ending of datafile? 
+  return fname;
+}
+
+/* */
+int Data::GetDataSetCount()
+{
+  return opts->NameCount;
+}
