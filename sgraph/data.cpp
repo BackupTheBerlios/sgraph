@@ -7,10 +7,10 @@ DataFile::DataFile(char *n)
   maxX=0;
   maxY=0;
   RowCount=0;
-  scalingFactorX=1.0;
-  scalingFactorY=1.0;
   logX=0;
   logY=0;
+  scalingFactorX=1.0;
+  scalingFactorY=1.0;
 
   allocated=100000;
   eofReached=0;
@@ -26,7 +26,6 @@ DataFile::DataFile(char *n)
 
   charCounter=0;
 }
-
 
 void DataFile::OpenFile()
 {
@@ -193,7 +192,6 @@ Point *Data::ReadPoint(int col)
   return(dataFiles[col]->ReadRow());
 }
 
-
 int Data::MorePoints(int col)
 {
   // if multicol, read column, else read 
@@ -205,6 +203,15 @@ Point **Data::GetPoints(int col)
   // if multicol, return data for column
   return(dataFiles[col]->GetData());
 }
+
+void Data::GetPoint(int col, int i, Point *p)
+{
+  Point **points = dataFiles[col]->GetData();
+  *p->x = *points[i]->x;
+  *p->y = *points[i]->y;
+  Translate(col,p);
+}
+
 
 int Data::GetRowCount(int col)
 {
@@ -263,6 +270,37 @@ View *Data::GetDefaultView()
     if(dataFiles[i]->maxY > *defaultView->ur->y)
       *defaultView->ur->y = dataFiles[i]->maxY;
   }
+
+  if(opts->logx)
+  {
+    if(*defaultView->ll->x > 0)
+      *defaultView->ll->x = log(*defaultView->ll->x);
+
+    if(*defaultView->ur->x > 0)
+      *defaultView->ur->x = log(*defaultView->ur->x);
+  }
+
+  if(opts->logy)
+  {
+    if(*defaultView->ll->y > 0)
+      *defaultView->ll->y = log(*defaultView->ll->y);
+
+    if(*defaultView->ur->y > 0)
+      *defaultView->ur->y = log(*defaultView->ur->y);
+  }
+
+  if(opts->fitx)
+  {
+    *defaultView->ll->x = 0;
+    *defaultView->ur->x = 1.0;
+  }
+
+  if(opts->fity)
+  {
+    *defaultView->ll->y = 0;
+    *defaultView->ur->y = 1.0;
+  }
+
   return defaultView;
 }
 
@@ -281,4 +319,48 @@ int Data::GetDataSetCount()
   return opts->NameCount;
 }
 
+// 2d scaling from opts
+void Data::Translate(int i, Point *p)
+{
+  double sx;
+  
+  if(opts->logx && !opts->fitx)
+  {
+    if(*p->x > 0) 
+      *p->x = log(*p->x);
+  }
+
+  if(opts->logy && !opts->fity)
+  {
+    if(*p->y > 0)
+      *p->y = log(*p->y);
+  }
+
+  if(opts->fitx)
+  {
+    double scalex;
+    scalex=dataFiles[i]->maxX - dataFiles[i]->minX;
+
+    if(scalex>0)
+      *p->x = *p->x/scalex - dataFiles[i]->minX/scalex;
+    else 
+      *p->x = 0.5;
+    
+    if(opts->logx)
+      *p->x = log(100.0*(*p->x) + 1.0)/log(101.0);
+  }
+  if(opts->fity)
+  {
+    double scaley;
+    scaley = dataFiles[i]->maxY - dataFiles[i]->minY;
+
+    if(scaley>0)
+      *p->y = *p->y/scaley - dataFiles[i]->minY/scaley;
+    else
+      *p->y=0.5;
+    
+    if(opts->logy)
+      *p->y = log(100.0*(*p->y) + 1.0)/log(101.0);
+  }
+}
 

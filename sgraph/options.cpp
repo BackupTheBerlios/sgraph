@@ -16,6 +16,10 @@ void SGraphOptions::usage()
   printf("  -f --follow         Plots data in real time from file(s).\n");
   printf("  -u --update         Periodically check file(s) and update plot.\n");
   printf("  -r --reverse-video  Black on white (causes eye-damage in high doses).\n");
+  printf("  -x --fitx           0..1 scale all datasets on x-axis.\n");
+  printf("  -y --fity           0..1 scale all datasets on y-axis.\n");
+  printf("  -k --logx           Logarithmic x-axis.\n");
+  printf("  -l --logy           Logarithmic y-axis.\n");
   printf("\n");
   printf("  Several other xgraph options should work.\n");
   printf("\n");
@@ -24,17 +28,26 @@ void SGraphOptions::usage()
   exit(0);
 }
 
+SGraphOptions::SGraphOptions()
+{
+  update=0;
+  histogram=0;
+  histogram2d=0;
+  reverse=0;
+  fity=0;
+  fitx=0;
+  follow=0;
+  logx=0;
+  logy=0;
+}
+
 void SGraphOptions::ParseOpts(int argc, char **argv)
 {
   // set defaults
   int colc=0;
   int debug=0;
-  follow=0;
-  update=0;
 
-  histogram=0;
-  histogram2d=0;
-  reverse=0;
+
 
   while (1) 
   {
@@ -49,10 +62,14 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
       {"histogram", 0, 0, 0},
       {"2d-histogram", 0, 0, 0},
       {"reverse-video", 0, 0, 0},
+      {"fitx", 0, 0, 0},
+      {"fity", 0, 0, 0},
+      {"logx", 0, 0, 0},
+      {"logy", 0, 0, 0},
       {0, 0, 0, 0}
     };
     
-    c = getopt_long (argc, argv, "fuh2r", long_options, &option_index);
+    c = getopt_long (argc, argv, "fuh2rxylk", long_options, &option_index);
     if (c == -1)
       break;
     
@@ -69,6 +86,14 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
 	update=1;
       if(option_index == 4)
 	reverse=1;
+      if(option_index == 5)
+	fitx=1;
+      if(option_index == 6)
+	fity=1;
+      if(option_index == 7)
+	logx=1;
+      if(option_index == 8)
+	logy=1;
       break;
 
     case 'f':
@@ -85,6 +110,18 @@ void SGraphOptions::ParseOpts(int argc, char **argv)
       break;
     case 'r':
       reverse=1;
+      break;
+    case 'x':
+      fitx=1;
+      break;
+    case 'y':
+      fity=1;
+      break;
+    case 'l':
+      logy=1;
+      break;
+    case 'k':
+      logx=1;
       break;
 
     default:

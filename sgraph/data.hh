@@ -31,6 +31,8 @@ public:
   //! Close file and "lose" all data, calls to ReadRow will start from beginning, 
   void CloseFile();
 
+
+
   //! opens data file. If filename - or stdin, open stdin.
   void OpenFile();
 
@@ -73,6 +75,9 @@ public:
   //! get direct data object for datasets (of points read so far with ReadPoint)
   Point **GetPoints(int n);
 
+  //! get single point with index, translated according to options
+  void GetPoint(int col, int i, Point *p);
+
   //! number of rows read so far in dataset n
   int GetRowCount(int n);
 
@@ -84,6 +89,9 @@ public:
 
   // Get number of datasets 
   int GetDataSetCount();
+
+  // translate a point according to opts.
+  void Translate(int i, Point *p);
 
   //! list of DataFile objects
   DataFile **GetDataFiles();

@@ -275,16 +275,15 @@ void SDLPlotter::PlotData(Data *d)
   
   for(int j=0; j<opts->NameCount && continuePlotting ; j++)
   {
-    points=d->GetPoints(j);
-    lastPoint = points[0];
-    
+    d->GetPoint(j,0,lastPoint);
+
     for(int i=1; i< d->GetRowCount(j) && continuePlotting ; i++)
     {
-      p=points[i];
+      d->GetPoint(j,i,p);
       if(p!=NULL) 
       {
 	graphics->drawLine(lastPoint,p,&colors[j]); 
-	lastPoint = points[i];
+	d->GetPoint(j,i,lastPoint);
       }
       if(i%10000 == 0)
 	graphics->Updated();
@@ -399,7 +398,6 @@ void SDLPlotter::InitPlot(Data *d)
   g->plot_margin_top=10+title_height;
   g->plot_margin_bottom=10+number_height;
 }
-
 
 SDLController::SDLController(SDLPlotter *p)
 {
@@ -577,7 +575,3 @@ void SDLController::FilterEvents()
     }
   }
 }
-
-
-
-

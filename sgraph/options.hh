@@ -23,6 +23,7 @@ public:
 class SGraphOptions : public Options
 {
 public:
+  SGraphOptions();
   void usage();
 
   //! pass argc and argv to this and it will take care of everything
@@ -36,6 +37,11 @@ public:
   int histogram;
   int histogram2d;
   int reverse;
+  int fitx;
+  int fity;
+  int logx;
+  int logy;
+
   char *FileNames[100];
 };
 

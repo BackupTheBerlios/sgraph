@@ -1,0 +1,71 @@
+.\" Process this file with
+.\" groff -man -Tascii foo.1
+.\"
+.TH SGRAPH 1 "FEB 2005" Linux "User Manuals"
+.SH NAME
+sgraph \- Simple SDL based command line driven data plotter
+.SH SYNOPSIS
+.B sgraph [-fuh2rxylk] 
+.I file1 file2 ...
+.SH DESCRIPTION
+.B sgraph
+reads files given as input and plots them. Zooming is possible with a
+mouse left click and drag. Right click returns to default zoom. 
+A lot of inspiration has come from XGrap, but there were some features
+that just couldn't be added.
+.SH OPTIONS
+.IP -f
+Follow files, check every now and then for new data in files
+.IP -u
+Reread the data from files every now and then.
+.IP -h
+Histogram
+.IP -2
+2d histogram
+.IP -r
+Reverse video = black on white. (yeah I known, white on black should be reverse, but I prefer it this way)
+.IP -x
+Fits all datasets to x-axis
+.IP -y
+Fits all datasets to y-axis 
+.IP -k
+Logarithmic scale on x-axis
+.IP -l
+Logarithmic scale on y-axis
+.SH FILES
+2-column format, every line is one point:
+
+x1 y1
+.br
+x2 y2
+.br
+x3 y3
+.br
+
+You can also pipe in stuff, by using -, or stdin.
+.SH DIAGNOSTICS
+There is no diagnostics. The -d option can be used to print out useless debugging information at a rate of abt 132 Mbit/sec.
+.SH EXAMPLES
+.TP 
+Pipe in data file:
+zcat lots.csv.gz |sgraph -
+.TP
+Plot data from two files, fit both axes (to 1..101 by convention) first and then take logarithm:
+sgraph -xylk file1.dat file2.dat
+
+.TP
+Plot stdin and two files, constantly update the two files (stdin can't really be reread). Also fit x and y axes:
+zcat lots.csv.gz |sgraph -xyu - file1.dat file2.dat
+
+.SH BUGS
+If you plot extremely large datafiles, you're asking for trouble. This
+hasn't been designed for plotting 1G files, although I might add a
+--huge parameter later on if I need one.
+.SH LATEST VERSION
+You can get the latest version from:
+http://mep.fi/sgraph
+.SH AUTHOR
+Juha Vierinen <jvierine@google's online mail.com>
+.SH "SEE ALSO"
+.BR zcat (1)
+.BR xgraph (1)
