@@ -78,6 +78,8 @@ public:
   // called after update performed
   void Updated();
 
+  void SetScreenSize(int w, int h);
+
   Point *p;
   SDL_Surface *screen;
 
@@ -114,17 +116,22 @@ public:
   ~SDLPlotter();
   virtual void PlotData(Data *d);
   void CreateColors(SGraphOptions *o);
+  void DrawGrid(Data *d, View *v);
+
   SDLGraphics *GetGraphics();
 
   SDLGraphics *graphics;
   SGraphOptions *opts;
   Color *colors;
 
-  int plot_margin_right;
-  int plot_margin_left;
-  int plot_margin_top;
-  int plot_margin_bottom;
+  Color *fg;
+  Color *bg;
 
+  int number_width;
+  int number_height;
+  int legend_width;
+  int title_height;;
+  
   int plotCount;
 };
 

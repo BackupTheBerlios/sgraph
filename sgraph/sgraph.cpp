@@ -11,19 +11,20 @@ int start;
 Data *d;
 SDLGraphics *graphics;
 View *customView;
+int done = 0;
 
 int paint(void *unused)
 {
   if(opts->follow)
-    ticks=100;
+    ticks=1000;
   else 
     ticks=1000;
 
-  while(true)
+  plotter->PlotData(d);
+  while(!done)
   {
-    int now;
-    now = SDL_GetTicks();
-    if(now - start > ticks && (opts->follow || opts->update)) 
+    SDL_Delay(ticks);
+    if(opts->follow || opts->update) 
     {
       if(opts->update)
 	d->ResetData();
@@ -53,16 +54,15 @@ int main(int argc, char **argv)
 
   customView = new View();
 
-  plotter->PlotData(d);
-
   start = SDL_GetTicks();
 
-  SDL_CreateThread(paint,NULL);
+  SDL_Thread *painter = SDL_CreateThread(paint,NULL);
 
   while(true)
   {
     SDL_Event event;
-    int done = 0;
+
+    SDL_Delay(150);
  
       while ( SDL_PollEvent(&event) )
       {
@@ -82,14 +82,19 @@ int main(int argc, char **argv)
 	  }
 	  if( event.key.keysym.sym == SDLK_c )
 	  {
-
 	    if( event.key.keysym.mod & KMOD_CTRL & KMOD_CTRL ) 
 	      done = 1; 
 	  }
-
 	}
+	if( event.type == SDL_VIDEORESIZE ) 
+	{
+	  graphics->SetScreenSize(event.resize.w, event.resize.h);
+	  plotter->PlotData(d);	  
+	}
+
 	if(done == 1) 
 	{
+	  SDL_KillThread(painter);
 	  SDL_Quit();
 	  exit(0);
 	}

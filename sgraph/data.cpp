@@ -78,7 +78,7 @@ Point *DataFile::ReadRow()
   char l[2000]; // 2000 should be enough for everyone
   char *line;
   int readCount=0;
-  double x,y;
+  float x,y;
   char c;
 
   // we have to plot something every now and then
@@ -102,7 +102,7 @@ Point *DataFile::ReadRow()
   }
 
   /* row must end with return */
-  readCount=sscanf(l,"%lf %lf", &x, &y);
+  readCount=sscanf(l,"%f %f", &x, &y);
   
   if(readCount==2)
   {
