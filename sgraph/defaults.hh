@@ -8,3 +8,10 @@
 #include "SDL_ttf.h"
 #include "SDL_thread.h"
 #include "SDL_mutex.h"
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b)) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a,b) (((a)>(b)) ? (a) : (b))
+#endif

@@ -5,9 +5,7 @@
 #include "view.hh"
 #include "options.hh"
 
-//! One dataset per file (two column format) 
-//! Load all points into RAM. If memory consumption becomes problematic, we could use a binary tmp file to store 
-//! intermediate stages
+//! One dataset per file (two column format) Load all points into RAM. If memory consumption becomes problematic, we could use a binary tmp file to store intermediate stages.
 class DataFile
 {
 public:
@@ -15,20 +13,22 @@ public:
   ~DataFile();
 
 
-  //! read one point from file in succsessive manner, NULL is returned if row is corrupted or if 
-  //! no more data, or if malformed row is encountered.
+  //! read one point from file in succsessive manner, NULL is returned if row is corrupted or if no more data, or if malformed row is encountered.
   Point *ReadRow();
 
-  // get all data read until now
+  //! get all data read until now
   Point **GetData();
+
+  //! is there more data
   int MoreData();
   
   //! return number of rows read until now with ReadRow
   int GetRowCount();
+
+  //! reopen file, reset row counter to 0
   void Reset();
 
   //! Close file and "lose" all data, calls to ReadRow will start from beginning, 
-  //! I don't remember if stdin is taken care of, I suspect it is retained.
   void CloseFile();
 
   //! opens data file. If filename - or stdin, open stdin.
@@ -41,14 +41,16 @@ public:
   int logX, logY, RowCount, allocated, eofReached, localCount, charCounter, lastModified;
 };
 
-/*!
-  abstract data class, contains N data sets
-  currently the implementation is oriented
-  to one data-set/file type of data, although this could
-  change in the future.
+//!  abstract data class, collection N datasets that are to be plotted
 
-  Basically you should only use this to read data, the current implementation
-  utilizes DataFile.
+/*!
+  Currently the implementation is oriented
+  to one data-set/file type of data, although this could
+  change in the future. Eg. multicolumn files, and XGraph type files with commands.
+
+  Baiscally, you have to milk the data with ReadPoint function until there is not more, 
+  otherwise data is not not be read, ie. we don't read all data at once, as sometimes this might 
+  be suicidal. The application logic takes care of deciding the data reading strategy based on command line options.
 */
 class Data
 { 
@@ -56,25 +58,39 @@ public:
   Data(SGraphOptions *o);
   ~Data();
 
+  //! return the bounds of all data read so far
   View *GetDefaultView();
-  DataFile **GetDataFiles();
+
+  //! read one point from dataset n. NULL is returned if point is corrupted some how (happens often with last row of stdin data that isn't ready yet)
   Point *ReadPoint(int n);
+
+  //! does dataset n potentially contain more points
   int MorePoints(int n);
+
+  //! reset the data for rereading from start
   void ResetData();
+
+  //! get direct data object for datasets (of points read so far with ReadPoint)
   Point **GetPoints(int n);
+
+  //! number of rows read so far in dataset n
   int GetRowCount(int n);
 
-  // hmm. kludge to enable following files
+  // to enable following files a la tail -f (files that are constantly being written new data) without rereading from beginning
   void SetEofReached(int e);
 
+  // Get name of dataset n (could be eg. file name, or a name given with a XGraph type command)
   char *GetDataName(int n);
 
+  // Get number of datasets 
   int GetDataSetCount();
+
+  //! list of DataFile objects
+  DataFile **GetDataFiles();
 
   View *defaultView;
   DataFile **dataFiles;
   SGraphOptions *opts;
 };
-
 
 #endif 

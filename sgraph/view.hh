@@ -3,6 +3,7 @@
 
 #include "defaults.hh"
 
+//! generic n-dim data vector
 class Vector
 {
 public:
@@ -12,6 +13,7 @@ public:
   int dim;
 };
 
+//! 2-dim data vector
 class Point : public Vector
 {
 public:
@@ -21,7 +23,7 @@ public:
   double *y;
 };
 
-// lower left and upper right positions
+//! lower left and upper right points that asign a rectangle in 2-space
 class View
 {
 public:
@@ -30,6 +32,5 @@ public:
   Point *ll;
   Point *ur;
 };
-
 
 #endif

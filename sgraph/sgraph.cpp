@@ -3,6 +3,7 @@
 #include "view.hh"
 #include "options.hh"
 #include "data.hh"
+#include "sdldraw.hh"
 
 SGraphOptions *opts;
 int ticks;
