@@ -1,6 +1,6 @@
 #include "data.hh"
 
-DataFile::DataFile(char *name)
+DataFile::DataFile(char *n)
 {
   minX=0;
   minY=0;
@@ -13,50 +13,94 @@ DataFile::DataFile(char *name)
   logY=0;
 
   allocated=1000;
+  eofReached=0;
 
-  points = calloc(allocated,sizeof(Point));
+  points = (Point **)calloc(allocated,sizeof(Point *));
+  for(int i=0; i<allocated ; i++)
+  {
+    points[i] = new Point();
+  }
+  name = n;
+  OpenFile();
+}
 
-  if(streq(name,"-") || streq(name,"stdin"))
+void DataFile::OpenFile()
+{
+  if(!strcmp(name,"-") || !strcmp(name,"stdin"))
     handle=stdin;
   else
     handle = fopen(name,"r");
 }
 
+void DataFile::CloseFile()
+{
+  if(!(!strcmp(name,"-") || !strcmp(name,"stdin")))
+  {
+    fclose(handle);
+  }
+}
+
+void DataFile::Reset()
+{
+  CloseFile();
+  OpenFile();
+  RowCount=0;
+  eofReached=0;
+}
+
 DataFile::~DataFile()
 {
-  fclose(handle);
+  CloseFile();
   free(points);
 }
 
-void DataFile::SetLogarithmic()
+
+int DataFile::MoreData()
 {
-  // todo
+  if(eofReached == 0)
+    return 1;
+  else 
+    return 0;
 }
 
 /*
   read one point from file in succsessive manner 
   todo, multicolumn
  */
-Point DataFile::ReadRow()
+Point *DataFile::ReadRow()
 {
   char l[2000]; // 2000 should be enough for everyone
+  char *line;
   int readCount=0;
   double x,y;
 
-  l = fgets(line, 2000, handle);
-  readCount=sscanf(token,"%lf %lf", &x, &y);
+  line = fgets(l, 2000, handle);
+
+  if(line == NULL)
+  {
+    eofReached=1;
+    return NULL;
+  }
   
+  readCount=sscanf(line,"%lf %lf", &x, &y);
+
   if(readCount==2)
   {
-    if(rowCount==allocated)
+    if(RowCount==(allocated-1))
     {
+      int prevA = allocated;
       allocated+=1000;
-      realloc(points,allocated*sizeof(Point));
+      points=(Point **)realloc(points,allocated*sizeof(Point *));
+      for(int t=prevA ; t<allocated ; t++)
+      {
+	points[t] = new Point();
+      }
     }
-    points[rowCount]->x = x;
-    points[rowCount]->y = y;
+
+    points[RowCount]->x = x;
+    points[RowCount]->y = y;
     
-    if(rowCount == 1)
+    if(RowCount == 0)
     {
       minX=x;
       minY=y;
@@ -73,37 +117,38 @@ Point DataFile::ReadRow()
     if(maxY<y)
       maxY=y;
 
-    return points[rowCount];
-
-    rowCount++;
+    RowCount++;
+    return points[RowCount];
   } 
   else 
   {
-    fprintf(stderr,"Ignoring malformed row: %s\n",token);
+    fprintf(stderr,"Ignoring malformed row: %s\n",line);
     return NULL;
   }
 }
 
 // get all data read until now
-Point *DataFile::GetData()
+Point **DataFile::GetData()
 {
   return points;
 }
 
-int GetRowCount()
+int DataFile::GetRowCount()
 {
-  return rowCount;
+  return RowCount;
 }
 
-Data::Data(SGraphOptions o)
+Data::Data(SGraphOptions *o)
 {
   opts = o;
+  dataFiles = (DataFile **)calloc(opts->NameCount,sizeof(DataFile *));
 
   // open files.. (- || stdin == stdin)
   for(int i=0; i<opts->NameCount ; i++)
   {
-    dataFile[i] = new DataFile(opts->FileNames[i]);
+    dataFiles[i] = new DataFile(opts->FileNames[i]);
   }
+  defaultView = new View();
 }
 
 Data::~Data() 
@@ -111,17 +156,24 @@ Data::~Data()
   // open files.. (- || stdin == stdin)
   for(int i=0; i<opts->NameCount ; i++)
   {
-    delete dataFile[i];
+    delete dataFiles[i];
   }
 }
 
-Point Data::ReadPoint(int col)
+Point *Data::ReadPoint(int col)
 {
   // if multicol, read column, else read 
-  return(dataFiles[col]->RowRow());
+  return(dataFiles[col]->ReadRow());
 }
 
-Point *Data::GetPoints(int col)
+
+int Data::MorePoints(int col)
+{
+  // if multicol, read column, else read 
+  return(dataFiles[col]->MoreData());
+}
+
+Point **Data::GetPoints(int col)
 {
   // if multicol, return data for column
   return(dataFiles[col]->GetData());
@@ -133,31 +185,44 @@ int Data::GetRowCount(int col)
   return(dataFiles[col]->GetRowCount());
 }
 
-DataFile *Data::GetDataFiles()
+DataFile **Data::GetDataFiles()
 {
   return dataFiles;
 }
 
-View Data::GetDefaultView()
+void Data::ResetData()
 {
-  defailtView->ll->x = dataFile[0]->minX;
-  defaultView->ll->y = dataFile[0]->minY;
-  defaultView->ur->x = dataFile[0]->maxX;
-  defaultView->ur->y = dataFile[0]->maxY;
+  for(int i=0; i<opts->NameCount ; i++)
+  {
+    dataFiles[i]->Reset();
+  }
+}
+
+
+View *Data::GetDefaultView()
+{
+  defaultView->ll->x = dataFiles[0]->minX;
+  defaultView->ll->y = dataFiles[0]->minY;
+  defaultView->ur->x = dataFiles[0]->maxX;
+  defaultView->ur->y = dataFiles[0]->maxY;
 
   for(int i=1; i<opts->NameCount ; i++)
   {
-    if(dataFile[i]->minX < defaultView->ll->x)
-      defaultView->ll->x = dataFile[i]->minX;
+    if(dataFiles[i]->minX < defaultView->ll->x)
+    {
+      defaultView->ll->x = dataFiles[i]->minX;
+    }
 
-    if(dataFile[i]->minY < defaultView->ll->y)
-      defaultView->ll->y = dataFile[i]->minY;
+    if(dataFiles[i]->minY < defaultView->ll->y)
+    {
+      defaultView->ll->y = dataFiles[i]->minY;
+    }
 
-    if(dataFile[i]->maxX > defaultView->ur->x)
-      defaultView->ur->x = dataFile[i]->maxX;
+    if(dataFiles[i]->maxX > defaultView->ur->x)
+      defaultView->ur->x = dataFiles[i]->maxX;
 
-    if(dataFile[i]->maxY > defaultView->ur->y)
-      defaultView->ll->y = dataFile[i]->maxY;
+    if(dataFiles[i]->maxY > defaultView->ur->y)
+      defaultView->ur->y = dataFiles[i]->maxY;
   }
   return defaultView;
 }

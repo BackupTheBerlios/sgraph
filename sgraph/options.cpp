@@ -1,5 +1,10 @@
 #include "options.hh"
 
+int SGraphOptions::GetNameCount()
+{
+  return NameCount;
+}
+
 void SGraphOptions::usage()
 {
   printf("Usage: sgraph file1.dat file2.dat file3.dat\n");
@@ -17,11 +22,11 @@ void SGraphOptions::usage()
   exit(0);
 }
 
-void SGraphOptions::parseOpts(int argc, char **argv)
+void SGraphOptions::ParseOpts(int argc, char **argv)
 {
   // set defaults
-  colc=0;
-  debug=0;
+  int colc=0;
+  int debug=0;
 
   while (1) 
   {
@@ -53,6 +58,23 @@ void SGraphOptions::parseOpts(int argc, char **argv)
       break;
     }
   }
+
+  NameCount=0;  
+  if((argc - optind) == 0) 
+  {
+    usage();
+    exit(1);
+  }
+  else 
+  {
+    while((argc - optind) > 0)
+    {
+      FileNames[NameCount] = argv[optind];
+      optind++;
+      NameCount++;
+    }
+  }  
+
 }
 
 int Options::getInt(char *str, char *errorMsg)

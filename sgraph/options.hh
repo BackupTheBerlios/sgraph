@@ -4,11 +4,14 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#ifndef __OPTIONS_HH_
+#define __OPTIONS_HH_
+
 class Options 
 {
 public:
   virtual void usage() {}
-  virtual void parseOpts(int argc, char *argv[]) {}
+  virtual void ParseOpts(int argc, char *argv[]) {}
   int getInt(char *str, char *errorMsg);
   double getDouble(char *str, char *errorMsg);
   int getIntVector(char *str, char *errorMsg, int *result);
@@ -19,7 +22,13 @@ class SGraphOptions : public Options
 {
 public:
   void usage();
-  void parseOpts(int argc, char *argv[]);
+  void ParseOpts(int argc, char *argv[]);
   int debug;
+  int GetNameCount();
+
+  int NameCount;
+  
+  char *FileNames[100];
 };
 
+#endif

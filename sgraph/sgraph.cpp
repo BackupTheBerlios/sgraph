@@ -1,47 +1,62 @@
+#include "defaults.hh"
 #include "draw.hh"
+#include "view.hh"
 #include "options.hh"
 #include "data.hh"
 
 int main(int argc, char **argv)
 {
-  SGraphOptions opts=new SGraphOptions();
-  opts->parseOpts(argc,argv);
+  int start;
+
+  SGraphOptions *opts=new SGraphOptions();
+  opts->ParseOpts(argc,argv);
   
-  Data d=new Data(opts);
+  Data *d=new Data(opts);
 
-  SDLPlotter plotter = new Plotter(d,opts);
-  SDLGraphics graphics = plotter->getGraphics();
+  SDLPlotter *plotter = new SDLPlotter(opts);
+  SDLGraphics *graphics = plotter->GetGraphics();
 
-  View customView = new View();
+  View *customView = new View();
+
+  plotter->PlotData(d);
+
+  start = SDL_GetTicks();
   while(true)
   {
-    int pid=fork();
-    if(pid==0)
-      plotter->plotData();
+    SDL_Event event;
+    int done = 0;
 
-    while(events.getEvent())
+    int now = SDL_GetTicks();
+    if(now -start > 1000) 
     {
-      // if esc, exit
-      // if leftclick events,
-      //    draw selection and set view
-      //    customView->ll
-      //    customView->ur
-      //    plotter->setView(customView);
-      // if rightclick
-      //    plotter->setView(d->getDefaultView());
+      d->ResetData();
+      plotter->PlotData(d);
+      start = SDL_GetTicks();
+    }
+
+
+    while ( SDL_PollEvent(&event) )
+    {
+      int x,y;
+      
+      if ( event.type == SDL_QUIT )  
+      {
+	done = 1;  
+      }
+      
+      if ( event.type == SDL_KEYDOWN )
+      {
+	if ( event.key.keysym.sym == SDLK_ESCAPE ) 
+	{ 
+	  done = 1; 
+	}
+	
+      }
+      if(done == 1) 
+      {
+	SDL_Quit();
+	exit(0);
+      }
     }
   }
-}
-  //   
-  //   
-  //   if enough time passed:
-  //     if(follow || update)
-  //         data->ReadMoreData();
-  //         if(UserDefinedView == null) 
-  //            get data->defaultview
-  //       
-  //   sniff events
-  //      if mouse clicked, start zoom stuff
-  //      if rightclick, data->getDefaultView
-  //      if update click, data->ReadMoreData();
 }

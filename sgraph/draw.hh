@@ -1,101 +1,130 @@
+#ifndef _DRAW_HH_
+#define _DRAW_HH_
+
 #include "defaults.hh"
-
-#ifndef _DEFAULTS_HH_
-#define _DEFAULTS_HH_
-
-class Point
-{
-  double x;
-  double y;
-};
+#include "data.hh"
+#include "options.hh"
+#include "view.hh"
 
 // lower left and upper right positions
-class View
+class Color
 {
-  Point ll;
-  Point ur;
+public:
+  int r;
+  int g;
+  int b;
+  int a;
 };
 
-// Plot data to given graphics context
-class Plotter
-{
-  int UseGrid;
-  int UseLegend;
-
-  void PlotData(Graphics g, View v, Data d);
-
-  void DrawGrid(Graphics g, Data d);
-  void DrawLabels(Graphics g, Data d);
-  void DrawLabels(Graphics g, Data d);
-};
-
+// override to support different renderers.. eg. BMPGraphics
 class Graphics 
 {
+public:
   // line
-  void drawLine(Point from, Point to, Color col);
+  void drawLine(Point *from, Point *to, Color *col);
 
   // one pixel point
-  void drawPoint(Point from, Point to, Color col);
+  void drawPoint(Point *p, Color *col);
 
   // filled rectangle
-  void drawRect(Point ll, Point ur, Color col);
+  void drawRect(Point *ll, Point *ur, Color *col);
 
   // circle
-  void drawCircle(Point center, Point to, Color col);
+  void drawCircle(Point *center, int rad, Color *col);
 
   // draw text at position lower left. Font size fixed
-  void drawText(char *str, Point ll, Color fg);
+  void drawText(char *str, Point *ll, Color *fg);
 
   // called after update performed
   void Updated();
+  
+  View *view;
 };
 
 // render abstract data-valued graphics with pixels on screen (and cool anti-aliasing)
 class SDLGraphics : public Graphics
 {
+public:
+  SDLGraphics();
+  ~SDLGraphics();
   // override stuff from graphics
 
   // line
-  void drawLine(Point from, Point to, Color col);
+  void drawLine(Point *from, Point *to, Color *col);
 
   // one pixel point
-  void drawPoint(Point from, Point to, Color col);
+  void drawPoint(Point *p, Color *col);
 
   // filled rectangle
-  void drawRect(Point ll, Point ur, Color col);
+  void drawRect(Point *ll, Point *ur, Color *col);
 
   // circle
-  void drawCircle(Point center, Point to, Color col);
+  void drawCircle(Point *center, int rad, Color *col);
 
   // draw text at position lower left. Font size fixed
-  void drawText(char *str, Point ll, Color fg);
+  void drawText(char *str, Point *ll, Color *fg);
+
+  void Clear();
 
   // translation
-  int PointToPixelX(Point p);
-  int PointToPixelY(Point p);
+  int PointToPixelX(Point *p);
+  int PointToPixelY(Point *p);
   // inverse translation
-  int PixelToPoint(Point p);
-  int PixelToPoint(Point p);
+  
+  // point is live until next call.
+  Point *PixelsToPoint(int x, int y);
 
   // called after update performed
   void Updated();
+
+  Point *p;
+  SDL_Surface *screen;
+
+  TTF_Font *font;
+
+  int done;
+  int glob;
+  
+  int screen_height;
+  int screen_width;
+
+  int plot_margin_right;
+  int plot_margin_left;
+  int plot_margin_top;
+  int plot_margin_bottom;
+
 };
 
-// postscript graphics?
-class PSGraphics : public Graphics
+// Plot data to given graphics context override to support
+// eg. SDLPlotter, GLEPlotter (maybe StreamedPlotter and UpdatingPlotter)
+class Plotter
 {
-  // called after update performed
-  void Updated();
+public:
+  int UseGrid;
+  int UseLegend;
+
+  void PlotData(Graphics g, View v, Data d);
 };
 
-// otherwise similar to ps graphics, but can save to file (maybe doesn't even open screen?)
-class BMPGraphics : public SDLGraphics
+class SDLPlotter : Plotter
 {
-  SaveBMP(char *name);
+public:
+  SDLPlotter(SGraphOptions *o);
+  ~SDLPlotter();
+  void PlotData(Data *d);
+  void CreateColors(SGraphOptions *o);
+  SDLGraphics *GetGraphics();
 
-  // called after update performed
-  void Updated();
+  SDLGraphics *graphics;
+  SGraphOptions *opts;
+  Color *colors;
+
+  int plot_margin_right;
+  int plot_margin_left;
+  int plot_margin_top;
+  int plot_margin_bottom;
+
+  int plotCount;
 };
-
 
 #endif
