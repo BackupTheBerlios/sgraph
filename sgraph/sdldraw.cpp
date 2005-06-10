@@ -28,11 +28,12 @@ SDLGraphics::SDLGraphics()
     exit(1);
   }
 
+#include "config.h"
   TTF_Init();
-  font=TTF_OpenFont("/usr/share/sgraph/cmss12.ttf", 12);
+  font=TTF_OpenFont(SGRAPH_FONT, 12);
   TTF_SetFontStyle(font, TTF_STYLE_NORMAL);
 
-  titleFont=TTF_OpenFont("/usr/share/sgraph/cmss12.ttf", 18);
+  titleFont=TTF_OpenFont(SGRAPH_FONT, 18);
   TTF_SetFontStyle(titleFont, TTF_STYLE_BOLD);
   
   p = new Point();

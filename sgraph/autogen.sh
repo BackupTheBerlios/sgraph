@@ -3,7 +3,7 @@
 # Regenerate configuration files
 aclocal
 automake -a
-# autoheader
+autoheader
 autoconf
 
 # Run configure for this platform

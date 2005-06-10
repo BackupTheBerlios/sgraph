@@ -10,11 +10,9 @@ rtdemo_SOURCES = $(COMMON_SRCS) rtdemo.cpp demodata.cpp demodata.hh
 
 
 
-
-
 install-data-local: 
-	$(INSTALL) -d $(DESTDIR)/usr/share/sgraph
-	$(INSTALL) $(srcdir)/cmss12.ttf $(DESTDIR)/usr/share/sgraph/cmss12.ttf
+	$(INSTALL) -d $(prefix)/share/sgraph
+	$(INSTALL) $(srcdir)/cmss12.ttf $(prefix)/share/sgraph/cmss12.ttf
 
 doxygen:
 	doxygen dox.conf 
